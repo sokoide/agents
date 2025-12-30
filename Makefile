@@ -5,7 +5,7 @@ AGENTS_HOME ?= $(HOME)/.agents
 INSTALL_DIR ?= $(AGENTS_HOME)/skills
 INCLUDE_SYSTEM ?= 0
 
-VALIDATOR := python3 $(SKILLS_DIR)/.system/skill-creator/scripts/quick_validate.py
+VALIDATOR := uv run --with PyYAML $(SKILLS_DIR)/.system/skill-creator/scripts/quick_validate.py
 
 .PHONY: list
 list:
