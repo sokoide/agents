@@ -5,8 +5,8 @@
 ### `sx` Prop: Use Cases & Limits
 
 - **Best for**: Rapid prototyping, spacing (m/p), and theme-aware one-offs.
-- **Caution**: Inline objects in `sx` can cause unnecessary re-renders if they depend on unstable values.
-- **Optimization**: Use the function form `sx={(theme) => ({ ... })}` when accessing the theme to ensure consistency.
+- **Caution**: `sx={{ ... }}` の inline object が毎 render 生成されると、prop 比較が効かず再レンダリング要因になる（特にメモ化コンポーネント）。
+- **Optimization**: 重い/頻繁に変わる `sx` は `styled()` か CSS 変数へ寄せる。必要なら `useMemo` で `sx` を安定化する。
 
 ### `styled()` API: The Professional Way
 
@@ -24,9 +24,9 @@ const StyledButton = styled(Button, {
 
 ## 2. Component Architecture
 
-### The "Slot" Pattern
+### `slots` / `slotProps` (Slot Pattern)
 
-- For complex components, expose "slots" to allow users to override sub-components without breaking the internal logic. This mirrors MUI's own internal architecture.
+- 多くの MUI コンポーネントは `slots`/`slotProps` を提供する。まずこれで内部要素差し替え/props 注入を行い、不要な wrapper を増やさない。
 
 ### Compound Components
 
@@ -35,14 +35,15 @@ const StyledButton = styled(Button, {
 ### Layout Hierarchy
 
 - **`Stack`**: 1D layout (gaps). Prefer over `Box` with margins.
-- **`Grid2`**: 2D layout. Ensure you use the latest `Grid2` from `@mui/material`.
+- **Grid**: 2D layout。`Grid`/`Grid2` の import path と API は v5/v6 で差が出るため、プロジェクトの MUI バージョンに合わせて統一する。
 - **`Container`**: Only for the outermost page constraints.
 
 ## 3. Performance & Bundle Size
 
 ### Tree Shaking
 
-- Avoid top-level `import { ... } from '@mui/material'`. While modern bundlers handle it, `import Button from '@mui/material/Button'` is safer in some environments.
+- 基本は bundler に任せてよいが、環境/設定次第で tree-shaking が効きにくいことがある。
+- 症状（バンドル肥大）がある場合に限り、deep import（例: `@mui/material/Button`）を検討する。
 
 ### Reducing DOM Depth
 
@@ -50,11 +51,11 @@ const StyledButton = styled(Button, {
 
 ## 4. Next.js & RSC (App Router)
 
-- **Client Components**: Mark only the leaf nodes as `'use client'` if they use MUI (since most MUI components use Context/Hooks).
-- **Style Injection**: Ensure `@mui/material-nextjs` is used for proper SSR style injection to avoid FOUC (Flash of Unstyled Content).
+- **Client Components**: MUI は多くが Hook/Context を使う。`'use client'` は「MUI を使うコンポーネントの最小単位」に閉じて境界を増やしすぎない。
+- **Style Injection**: SSR では公式の Next.js 統合パターン（`@mui/material-nextjs` 等）を優先し、FOUC と hydration mismatch を避ける。
 
 ## 5. Accessibility (a11y)
 
 - **Contrast**: Use `theme.palette.getContrastText(color)` to dynamically determine text color.
-- **Focus**: Never remove `outline: none` without providing a `theme.focusVisible` alternative.
+- **Focus**: `outline: none` は原則禁止。`:focus-visible` か MUI の focus-visible クラスを前提に、視認できるフォーカス表現を維持する。
 - **ARIA**: Use `IconButton` with `aria-label` and `Tooltip` for clarity.

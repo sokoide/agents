@@ -12,6 +12,7 @@
 
 - Use `styleOverrides` in the theme to define global styles for components (e.g., all Buttons should have a specific border radius).
 - Use `defaultProps` to set project-wide defaults like `disableRipple` or `size="small"`.
+- Prefer theme `variants` when the difference is a first-class “variant” of the component (e.g., size/style modes), and `styleOverrides` for global baseline tweaks.
 
 ```tsx
 const theme = createTheme({
@@ -51,6 +52,8 @@ declare module '@mui/material/styles' {
   }
 }
 ```
+
+When using `sx` heavily, consider typing reusable style objects as `SxProps<Theme>` to keep inference stable.
 
 ## 3. Responsive Design
 
