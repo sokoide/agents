@@ -23,6 +23,18 @@ validate:
 		$(VALIDATOR) "$$d"; \
 	done
 
+.PHONY: format
+format:
+	@set -eu; \
+	if ! command -v markdownlint >/dev/null 2>&1; then \
+		echo "markdownlint not found in PATH" >&2; \
+		exit 1; \
+	fi; \
+	markdownlint $$(find . -name '*.md' -type f \
+		-not -path './.git/*' \
+		-not -path './.serena/*' \
+		-not -path './skills/.system/*') --disable MD013
+
 .PHONY: install
 install:
 	@set -eu; \
@@ -47,8 +59,3 @@ install:
 			rsync -a "$$d/" "$(INSTALL_DIR)/$$base/"; \
 		fi; \
 	done
-
-.PHONY: format
-format:
-        @echo "Formatting markdown files..."
-        npx markdownlint "**/*.md" --fix

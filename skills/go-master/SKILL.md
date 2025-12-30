@@ -6,21 +6,25 @@ description: "Expert-level Go architect. Master of Effective Go, idiomatic patte
 # Go Master
 
 ## When to Use
+
 - Go コードの実装/改善/レビュー（特にエラー処理、API 設計、並行処理、性能）
 - 既存コードの「Go らしさ」改善（命名、パッケージ分割、インターフェース設計）
 - ゴルーチン/チャネル/`context.Context` を使う設計の安全性チェック
 
 ## First Questions (Ask Up Front)
+
 - Go バージョン、`go.mod` の有無、対象実行環境（CLI/HTTP/gRPC/Job）
 - 失敗時の要件（リトライ、冪等性、タイムアウト、キャンセル）
 - 性能要件（p99 レイテンシ、アロケ抑制、並列度、外部 I/O 制約）
 
 ## Output Contract (How to Respond)
+
 - **レビュー**: 指摘を「Correctness / API / Concurrency / Errors / Performance / Style」に分類し、根拠（Effective Go / Review Comments）を短く添える。
 - **修正提案**: まず `gofmt`・命名・境界（package / interface）を整え、次にロジック/並行処理を最小差分で直す。
 - **並行処理**: ゴルーチンの開始点と終了条件（キャンセル、close、待機）を必ず明示する。
 
 ## Design & Coding Rules (Expert Defaults)
+
 1. **Simplicity wins**: 抽象化は「必要になってから」。最初から汎用化しない。
 2. **Errors are values**: `error` を返す。`panic` は回復不能（初期化失敗など）に限定。
 3. **Context propagation**: `context.Context` は第1引数、構造体フィールドに保持しない。
@@ -28,6 +32,7 @@ description: "Expert-level Go architect. Master of Effective Go, idiomatic patte
 5. **Concurrency is owned**: ゴルーチンを起こした側が停止/回収責務を持つ（リーク禁止）。
 
 ## Review Checklist (High-Signal)
+
 - **Errors**: メッセージ形式、wrap/unwrap、握りつぶし、`_` 破棄、リトライ境界
 - **Context**: タイムアウト/キャンセル伝播、I/O 境界への適用、構造体保持の禁止
 - **Concurrency**: ゴルーチンリーク、close 競合、データ競合、`sync`/チャネルの使い分け
@@ -36,5 +41,6 @@ description: "Expert-level Go architect. Master of Effective Go, idiomatic patte
 - **Performance**: 不要アロケ、`make`/`reserve`（cap 指定）、ホットパスでの `fmt`/反射
 
 ## References
+
 - [Effective Go](references/effective-go.md)
 - [Go Code Review Comments](references/code-review-comments.md)
