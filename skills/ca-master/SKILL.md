@@ -4,8 +4,6 @@ description: >
   Clean Architecture master for Go-style 4-layer architecture.
   Enforces strict dependency rules, domain ownership of ports,
   and clear separation between Framework and Infra Adapters.
-references:
-  - references/clean-arch-4layer.md
 ---
 
 # Clean Architecture Master (4-Layer + Framework)
@@ -13,11 +11,21 @@ references:
 ---
 
 This skill **strictly follows the rules defined in**  
-[`references/clean-arch-4layer.md`](references/clean-arch-4layer.md).  
+[`references/clean-arch-4layer.md`](references/clean-arch-4layer.md).
 
 All reviews, judgments, and refactoring advice **MUST conform to that document**.
 
 ---
+
+## When to Use
+- Go を中心とした Clean Architecture（4-layer）での設計/レビュー/リファクタ
+- レイヤー境界の混線（Domain が外部依存、UseCase が DB/HTTP 直叩き等）の解消
+- 依存性注入（Composition Root）と Port/Adapter 分離の設計
+
+## Output Contract (Required)
+- **診断**: 依存方向違反（import/参照）・責務混入・データ境界/エラー境界の破れを列挙する。
+- **修正**: 「Port 定義 → Adapter 切り出し → Framework を薄く」の順で、最小差分の段階的手順を提示する。
+- **言い切り条件**: この skill では “好み” ではなく “規約違反” を明確に判定する（根拠は reference）。
 
 ## Core Philosophy
 
@@ -98,6 +106,13 @@ All reviews, judgments, and refactoring advice **MUST conform to that document**
 - まず Port を定義し、次に Infra Adapter を切り出す
 - 最後に Framework を薄くする
 
+## Common Violations (Fast Smell List)
+- Domain に `database/sql`, `net/http`, ORM/SDK の型が漏れている
+- UseCase が SQL/HTTP/ファイル I/O を直接扱う（Adapter 未分離）
+- Framework が Entity を直接永続化/変換し、UseCase を迂回する
+- Infra Adapter が domain decision（ビジネス判断）を持つ
+- driver error（SQL エラー等）が境界を越えて上位に漏れる
+
 ---
 
 ## Positioning
@@ -105,3 +120,5 @@ All reviews, judgments, and refactoring advice **MUST conform to that document**
 - This skill enforces **architectural correctness**, not coding style.
 - Framework や ORM の流儀より **参照規約を優先**する。
 
+## References
+  - [Clean Arch](references/clean-arch-4layer.md)
