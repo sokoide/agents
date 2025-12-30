@@ -20,12 +20,10 @@ make validate
 
 ### install
 
-スキルを Codex のスキルディレクトリへコピーします（既定: `~/.codex/skills`）。
+スキルをスキルディレクトリへコピーします（既定: `~/.agents/skills`）。
 
 ```sh
 make install
-make install CODEX_HOME=~/.codex
-make install INSTALL_DIR=~/somewhere/skills
 ```
 
 `skills/.system/` 配下も入れたい場合は:
@@ -36,24 +34,41 @@ make install INCLUDE_SYSTEM=1
 
 ## Codex での使い方
 
-1) `make install` で `CODEX_HOME/skills` に配置  
-2) 依頼時にスキル名を明示して使います（例: `$go-master` / `$java-master` / `$cs-master`）。  
+1) 初回のみ`cd $HOME/.codex; mv skills skills.bak; ln -s $THIS_REPO/skills $HOME/.codex/skills`
+2) `make install` で `.agents/skills` に配置
+3) 依頼時にスキル名を明示して使います（例: `$go-master` / `$java-master` / `$cs-master`）。
 スキル側の「First Questions」に答える情報（バージョン、制約、目標）を最初に渡すと精度が上がります。
 
-## Gemini での使い方（手動運用）
+## Gemini CLI での使い方
 
-Gemini 側に自動の skill ローダが無い場合は、必要なスキルを **添付/貼り付け**して運用します。
+Gemini CLI（Serena）では、`.gemini/GEMINI.md` に以下の設定を追加することで、`$` 記号を使ってスキルを即座に呼び出すことができます。
 
-- まず `skills/<skill>/SKILL.md` を貼る（もしくはファイル添付）
-- 必要に応じて `skills/<skill>/references/*.md` を追加で貼る
+### 設定例（.gemini/GEMINI.md）
 
-運用例（プロンプト）:
-> 次の Skill の指示に従ってレビューしてください: `skills/go-master/SKILL.md`  
-> 追加参照: `skills/go-master/references/code-review-comments.md`
+```markdown
+## skills
+
+- `$HOME/.agents/skills` および `$HOME/.agents/skills/.system` には、再利用可能なスキルが格納されています。
+- ユーザーが `$` で始まるコマンドを入力した場合、それがスキル名（ディレクトリ名）と一致するなら、以下の手順で実行してください：
+
+1. `$HOME/.agents/skills/[コマンド名]/SKILL.md` または `$HOME/.agents/skills/.system/[コマンド名]/SKILL.md` を読み込む。
+2. スキル内の `description` と指示内容を理解し、現在のコンテキストに適用する。
+3. 必要に応じて、そのスキル内の `scripts/` にあるツールを実行する。
+
+### 登録済みスキル例
+
+- `$skill-creator` : スキル作成ガイドを起動
+- `$ca-master` : クリーンアーキテクチャの型を適用
+- `$go-master` : Go言語のベストプラクティスを適用
+- `$ts-master` : TypeScriptの型設計を適用
+...
+```
+
+### 運用手順
+
+1. `make install INSTALL_DIR=$HOME/.agents/skills INCLUDE_SYSTEM=1` でスキルを配置します。
+2. チャット内で `$go-master` のように入力すると、そのスキルの専門知識がロードされます。
 
 ## 新しい skill を追加する
 
-```sh
-python3 skills/.system/skill-creator/scripts/init_skill.py my-skill --path skills/
-python3 skills/.system/skill-creator/scripts/quick_validate.py skills/my-skill
-```
+CodexもしくはGemini CLI内部で`$skill-creator`

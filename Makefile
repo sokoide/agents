@@ -1,8 +1,8 @@
 SHELL := /bin/sh
 
 SKILLS_DIR ?= skills
-CODEX_HOME ?= $(HOME)/.codex
-INSTALL_DIR ?= $(CODEX_HOME)/skills
+AGENTS_HOME ?= $(HOME)/.agents
+INSTALL_DIR ?= $(AGENTS_HOME)/skills
 INCLUDE_SYSTEM ?= 0
 
 VALIDATOR := python3 $(SKILLS_DIR)/.system/skill-creator/scripts/quick_validate.py
