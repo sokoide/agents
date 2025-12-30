@@ -37,4 +37,4 @@ description: "High-integrity Rust architect. Master of ownership, borrowing, lif
 
 ## References
 - [Rust Safety & Performance Idioms](references/best-practices.md)
-- [Rust API Guidelines](https://rust-lang.github.io/api-guidelines/) (External)
+- [Rust API Guidelines](references/rust-api-guidelines-summary.md)

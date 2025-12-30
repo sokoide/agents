@@ -37,4 +37,4 @@ description: "Master of Pythonic design and performance. Expert in PEP standards
 
 ## References
 - [Pythonic Idioms & Type Safety](references/best-practices.md)
-- [The Zen of Python (PEP 20)](https://peps.python.org/pep-0020/) (External)
+- [The Zen of Python (PEP 20)](references/pep20-summary.md)

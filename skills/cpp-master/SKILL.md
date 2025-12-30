@@ -41,8 +41,4 @@ description: "High-performance C++ architect. Expert in C++11/14/17/20/23, RAII,
 
 ## References
 - [C++ Best Practices & Modern Idioms](references/best-practices.md)
-- [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines) (External)
-
-## References
-- [C++ Best Practices & Modern Idioms](references/best-practices.md)
-- [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines) (External)
+- [C++ Core Guidelines](references/cpp-core-guidelines-summary.md)
