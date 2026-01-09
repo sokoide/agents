@@ -39,6 +39,62 @@ description: "High-fidelity TypeScript architect. Expert in TS 5.x specs, struct
 - **Config**: `strict` 系、`noUncheckedIndexedAccess` 等の採用可否、`skipLibCheck` の影響
 - **Performance**: 型計算コスト（IDE 遅延）、ビルド時間、バンドルサイズ（type-only import）
 
+## Common Pitfalls (よくある間違い)
+
+### ❌ 悪い例
+
+```typescript
+// NG: any の乱用
+function process(data: any): any {
+    // 型安全性ゼロ
+    return data.whatever; // ランタイムエラー
+}
+
+// NG: アサーションの乱用
+const value = data as string; // 検証なし
+
+// NG: ! で null を単純に無視
+const user = users.find((u) => u.id === id)!; // undefined の可能性
+
+// NG: 外部 JSON を検証なしで使用
+const config: Config = JSON.parse(text); // 実際の形式不明
+```
+
+### ✅ 良い例
+
+```typescript
+// OK: unknown を使って型ガード
+function process(data: unknown): string {
+    if (typeof data === 'string') {
+        return data;  // 型が絞り込まれた
+    }
+    throw new Error('Invalid data');
+}
+
+// OK: 型ガードで安全に検証
+function isString(value: unknown): value is string {
+    return typeof value === 'string';
+}
+
+// OK: Optional chaining と nullish coalescing
+const user = users.find(u => u.id === id);
+const name = user?.name ?? 'Unknown';
+
+// OK: Zod でランタイム検証
+import { z } from 'zod';
+const ConfigSchema = z.object({ ... });
+const config = ConfigSchema.parse(JSON.parse(text));
+```
+
+## AI-Specific Guidelines (実装時の優先順位)
+
+1. **any 禁止、unknown 使用**: 不明な値は `unknown` とし、型ガードで絞り込む。
+2. **ランタイム検証を必須に**: 外部入力（API/JSON）は Zod や io-ts で検証する。
+3. **as より satisfies**: 型アサーションを減らし、`satisfies` で型推論を保つ。
+4. **strict を有効化**: `tsconfig.json` で `strict: true` を設定する。
+5. **公開型を安定化**: module 境界で内部型が漏れないよう設計する。
+6. **type-only import**: 型だけの import は `import type` で明示し、バンドルサイズを減らす。
+
 ## References
 
 - [Enterprise Best Practices](references/best-practices.md)

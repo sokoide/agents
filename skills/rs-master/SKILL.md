@@ -40,7 +40,64 @@ description: "High-integrity Rust architect. Master of ownership, borrowing, lif
 - **Performance**: 不要 clone、アロケ、`Vec` の再確保、メモリレイアウト
 - **Tooling**: `rustfmt`/`clippy` 前提で直る指摘か、lint の抑制理由が妥当か
 
+## Common Pitfalls (よくある間違い)
+
+### ❌ 悪い例
+
+```rust
+// NG: 不要な clone
+fn process(data: Vec<String>) -> Vec<String> {
+    data.clone()  // 所有権があるのに clone
+}
+
+// NG: unwrap の乱用
+let value = map.get("key").unwrap();  // パニック
+
+// NG: 可変参照の重複
+let mut v = vec![1, 2, 3];
+let r1 = &mut v;
+let r2 = &mut v;  // コンパイルエラー
+
+// NG: ライフタイムの誤用
+fn longest(x: &str, y: &str) -> &str {  // コンパイルエラー
+    if x.len() > y.len() { x } else { y }
+}
+```
+
+### ✅ 良い例
+
+```rust
+// OK: 所有権を移動
+fn process(data: Vec<String>) -> Vec<String> {
+    data  // そのまま返す
+}
+
+// OK: Result/Option で安全に処理
+let value = map.get("key").ok_or("not found")?;
+
+// OK: 借用のスコープを分ける
+let mut v = vec![1, 2, 3];
+{
+    let r1 = &mut v;
+    r1.push(4);
+}  // r1 のスコープ終了
+let r2 = &mut v;
+
+// OK: ライフタイムを明示
+fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
+    if x.len() > y.len() { x } else { y }
+}
+```
+
+## AI-Specific Guidelines (実装時の優先順位)
+
+1. **型で不正状態を排除**: `enum` で状態遷移を表現し、不正な組み合わせをコンパイル時に排除する。
+2. **unwrap/expect を避ける**: ライブラリでは `Result` を返し、アプリでは `?` で伝播させる。
+3. **clone は最後の手段**: 借用で解決できないか、所有権の設計を見直せないか、まず検討する。
+4. **エラー型は明示**: public API では `thiserror` で独自エラー型、内部では `anyhow` を検討。
+5. **async は Send/Sync を意識**: `!Send` なデータを `.await` を跨いで保持しない。
+6. **unsafe は最小限**: invariant をコメントで明記し、safe な wrapper で隠蔽する。
+
 ## References
 
-- [Rust Safety & Performance Idioms](references/best-practices.md)
 - [Rust API Guidelines](references/rust-api-guidelines-summary.md)

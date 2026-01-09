@@ -44,6 +44,62 @@ description: "C# + .NET expert. Master of modern C# (10/11/12), ASP.NET Core, de
 - **Performance**: 不要アロケ、過剰な LINQ、同期 I/O、巨大 JSON、GC 圧
 - **Operability**: タイムアウト/リトライ/冪等性、graceful shutdown、バックグラウンド処理の回収
 
+## Common Pitfalls (よくある間違い)
+
+### ❌ 悪い例
+
+```csharp
+// NG: async で同期ブロッキング
+public async Task<User> GetUserAsync(int id) {
+    return db.Users.Find(id);  // 同期メソッド
+}
+
+// NG: .Result でデッドロック
+public void Process() {
+    var result = GetDataAsync().Result;  // デッドロックの危険
+}
+
+// NG: EF Core で N+1
+foreach (var user in users) {
+    var orders = db.Orders.Where(o => o.UserId == user.Id).ToList();  // N+1
+}
+
+// NG: DI lifetime の誤り
+services.AddSingleton<DbContext>();  // DbContext は Scoped であるべき
+```
+
+### ✅ 良い例
+
+```csharp
+// OK: async を一貫して使用
+public async Task<User> GetUserAsync(int id, CancellationToken ct) {
+    return await db.Users.FindAsync(id, ct);
+}
+
+// OK: await を使う
+public async Task ProcessAsync() {
+    var result = await GetDataAsync();
+}
+
+// OK: Include で一括取得
+var users = await db.Users
+    .Include(u => u.Orders)
+    .ToListAsync(ct);
+
+// OK: 適切な DI lifetime
+services.AddScoped<DbContext>();
+services.AddScoped<IUserService, UserService>();
+```
+
+## AI-Specific Guidelines (実装時の優先順位)
+
+1. **async all the way**: I/O は必ず async、`.Result`/`.Wait()` は絶対に使わない。
+2. **CancellationToken を伝播**: すべての async メソッドで `CancellationToken` を受け取り、外部 I/O に渡す。
+3. **DI lifetime を正しく**: DbContext は Scoped、ステートレスサービスは Scoped か Transient、キャッシュは Singleton。
+4. **EF Core は Include で**: N+1 を避けるため、必要なナビゲーションプロパティは明示的に Include する。
+5. **DTO と Entity を分離**: API DTO と EF Entity を混在させず、境界で mapping する（AutoMapper や Mapster）。
+6. **構造化ログ**: `ILogger<T>` で構造化ログ、機微情報は絶対にログに出さない。
+
 ## References
 
 - [Dotnet Backend Review Guide](references/dotnet-backend-review.md)

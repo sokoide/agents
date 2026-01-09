@@ -27,7 +27,7 @@ description: "Expert-level Go architect. Master of Effective Go, idiomatic patte
 
 1. **Simplicity wins**: 抽象化は「必要になってから」。最初から汎用化しない。
 2. **Errors are values**: `error` を返す。`panic` は回復不能（初期化失敗など）に限定。
-3. **Context propagation**: `context.Context` は第1引数、構造体フィールドに保持しない。
+3. **Context propagation**: `context.Context` は第 1 引数、構造体フィールドに保持しない。
 4. **Interfaces at the consumer**: インターフェースは利用側で定義し、返り値は具体型（Accept interfaces, return structs）。
 5. **Concurrency is owned**: ゴルーチンを起こした側が停止/回収責務を持つ（リーク禁止）。
 
@@ -40,7 +40,75 @@ description: "Expert-level Go architect. Master of Effective Go, idiomatic patte
 - **Data**: `nil` vs 空スライス/マップ、コピーの有無、`append` の戻り値代入
 - **Performance**: 不要アロケ、`make`/`reserve`（cap 指定）、ホットパスでの `fmt`/反射
 
+## Common Pitfalls (よくある間違い)
+
+### ❌ 悪い例
+
+```go
+// NG: ゴルーチンリーク（停止手段がない）
+func process() {
+    go func() {
+        for {
+            doWork()  // 永遠に回り続ける
+        }
+    }()
+}
+
+// NG: context を構造体に保持
+type Client struct {
+    ctx context.Context  // NG
+}
+
+// NG: エラーを握りつぶす
+data, _ := fetchData()  // エラーチェックなし
+
+// NG: append の戻り値を無視
+slice := []int{1, 2, 3}
+append(slice, 4)  // 戻り値を使わないと無意味
+```
+
+### ✅ 良い例
+
+```go
+// OK: context でキャンセル可能
+func process(ctx context.Context) {
+    go func() {
+        for {
+            select {
+            case <-ctx.Done():
+                return  // キャンセル時に終了
+            default:
+                doWork()
+            }
+        }
+    }()
+}
+
+// OK: context は引数で受け取る
+func (c *Client) Fetch(ctx context.Context, id string) error {
+    // ...
+}
+
+// OK: エラーを必ずチェック
+data, err := fetchData()
+if err != nil {
+    return fmt.Errorf("fetch failed: %w", err)
+}
+
+// OK: append の戻り値を代入
+slice := []int{1, 2, 3}
+slice = append(slice, 4)
+```
+
+## AI-Specific Guidelines (実装時の優先順位)
+
+1. **エラーは値**: すべての `error` を確認し、適切に wrap する。`_` で無視しない。
+2. **context は第 1 引数**: I/O を伴うすべての関数で `context.Context` を受け取る。
+3. **ゴルーチンリークゼロ**: 起動したゴルーチンには必ず終了条件を設ける（Done チャネルか context）。
+4. **インターフェースは小さく**: 1-3 メソッドの小さいインターフェースを消費側で定義する。
+5. **性能は計測してから**: 推測で最適化しない。`pprof` や `benchstat` で根拠を示す。
+6. **gofmt 必須**: コード生成後は必ず `gofmt` で整形する。
+
 ## References
 
 - [Effective Go](references/effective-go.md)
-- [Go Code Review Comments](references/code-review-comments.md)

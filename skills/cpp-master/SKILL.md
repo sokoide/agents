@@ -27,9 +27,9 @@ description: "High-performance C++ architect. Expert in C++11/14/17/20/23, RAII,
 
 1. **RAII + Rule of Zero**: 所有するリソースは型で表現し、`new`/`delete` を直接書かない。
 2. **Ownership is explicit**:
-   - 単独所有: `std::unique_ptr`
-   - 共有所有: `std::shared_ptr`（必要性を説明できる場合のみ）
-   - 非所有ビュー: `T&` / `T*`（nullable を表す場合）/ `std::span` / `std::string_view`
+    - 単独所有: `std::unique_ptr`
+    - 共有所有: `std::shared_ptr`（必要性を説明できる場合のみ）
+    - 非所有ビュー: `T&` / `T*`（nullable を表す場合）/ `std::span` / `std::string_view`
 3. **Exception Safety**: 例外を使うなら保証（basic/strong/nothrow）を明示し、デストラクタで例外を投げない。必要に応じて `noexcept` を付与する。
 4. **Zero-cost abstractions**: 仮想よりテンプレート/`std::variant`/`std::function` を含めてトレードオフを評価する（可読性・バイナリサイズ・分岐予測）。
 5. **Performance hygiene**: 不要コピー/アロケを避ける（`reserve`, ムーブ、`emplace`）。ただし可読性を損なう最適化は計測後に行う。
@@ -44,7 +44,70 @@ description: "High-performance C++ architect. Expert in C++11/14/17/20/23, RAII,
 - **Concurrency**: ロック粒度、アトミックのメモリ順序、共有可変状態の隔離
 - **Build/ODR**: ヘッダ肥大、循環依存、`inline`/テンプレート定義配置、PIMPL の適用可否
 
+## Common Pitfalls (よくある間違い)
+
+### ❌ 悪い例
+
+```cpp
+// NG: 生ポインタで所有権が不明
+Widget* makeWidget() { return new Widget(); }  // 誰が delete する？
+
+// NG: std::move の誤用
+std::string s = "hello";
+process(std::move(s));
+std::cout << s;  // s は有効だが未規定状態（UB ではないが危険）
+
+// NG: ぶら下がり参照
+const std::string& getName() {
+    std::string name = "temp";
+    return name;  // ローカル変数への参照を返す
+}
+
+// NG: コピーの嵐
+std::vector<std::string> filter(std::vector<std::string> items) {  // コピー
+    std::vector<std::string> result;  // reserve なし
+    for (auto item : items) {  // またコピー
+        if (predicate(item)) result.push_back(item);  // さらにコピー
+    }
+    return result;
+}
+```
+
+### ✅ 良い例
+
+```cpp
+// OK: 所有権を明示
+std::unique_ptr<Widget> makeWidget() { return std::make_unique<Widget>(); }
+
+// OK: ムーブ後は使わない、または状態を確認
+std::string s = "hello";
+process(std::move(s));
+// s は使わない、または s.clear() などで再初期化
+
+// OK: 値で返すか、ビューを返す
+std::string getName() { return "temp"; }  // RVO/NRVO
+std::string_view getNameView() { return "literal"; }  // リテラルのみ
+
+// OK: 参照で受け取り、reserve、emplace
+std::vector<std::string> filter(const std::vector<std::string>& items) {
+    std::vector<std::string> result;
+    result.reserve(items.size());  // 最悪ケースを想定
+    for (const auto& item : items) {  // 参照
+        if (predicate(item)) result.push_back(item);
+    }
+    return result;  // RVO
+}
+```
+
+## AI-Specific Guidelines (実装時の優先順位)
+
+1. **所有権ファースト**: コード書く前に「誰が所有するか」を決定する。迷ったら `unique_ptr`。
+2. **Rule of Zero 原則**: 特殊メンバ関数を書かない。リソースは RAII 型に任せる。
+3. **const 正当性**: すべての関数引数・メンバ関数に `const` 可否を明示する。
+4. **参照 vs ポインタ**: nullable なら `T*`、non-null なら `T&`。C++20 以降なら `std::optional<std::reference_wrapper<T>>` も検討。
+5. **例外安全性を明言**: basic/strong/nothrow のどれを提供するか、特に public API では明示する。
+6. **テンプレートエラーは予防**: `static_assert` や Concepts で制約を早期に示す。
+
 ## References
 
-- [C++ Best Practices & Modern Idioms](references/best-practices.md)
 - [C++ Core Guidelines](references/cpp-core-guidelines-summary.md)

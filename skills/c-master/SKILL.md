@@ -40,7 +40,58 @@ description: "System-level C architect. Expert in C99/C11/C17/C23, manual memory
 - **Concurrency**: データ競合、`volatile` の誤用（同期プリミティブではない）、アトミック操作の整合性
 - **Build/Organization**: ヘッダガードの徹底、グローバル変数の最小化（`static` の活用）、循環依存の回避
 
+## Common Pitfalls (よくある間違い)
+
+### ❌ 悪い例
+
+```c
+// NG: バッファサイズを考慮しない
+char buf[10];
+strcpy(buf, user_input);  // バッファオーバーフロー
+
+// NG: エラーパスでリーク
+char *p = malloc(100);
+if (process(p) != 0) return -1;  // メモリリーク
+free(p);
+
+// NG: 未初期化変数
+int result;
+if (condition) result = compute();
+return result;  // condition が false の時 UB
+```
+
+### ✅ 良い例
+
+```c
+// OK: サイズ境界チェック
+char buf[10];
+strncpy(buf, user_input, sizeof(buf) - 1);
+buf[sizeof(buf) - 1] = '\0';
+
+// OK: goto によるエラーパス一元管理
+char *p = malloc(100);
+if (p == NULL) return -1;
+int ret = process(p);
+if (ret != 0) goto cleanup;
+// ... 処理 ...
+cleanup:
+    free(p);
+    return ret;
+
+// OK: 初期化を明示
+int result = 0;
+if (condition) result = compute();
+return result;
+```
+
+## AI-Specific Guidelines (実装時の優先順位)
+
+1. **Safety First**: コンパイルが通るだけでは不十分。UB/リークを必ずチェックする。
+2. **Explicit is better**: 暗黙の型変換やマクロの挙動に依存せず、意図を明示する。
+3. **エラーパスを最初に**: 正常パスより先にエラー処理・クリーンアップ経路を設計する。
+4. **移植性を仮定しない**: `int` のサイズ、エンディアン、アライメント要求を環境依存と明記する。
+5. **コメント必須箇所**: `goto`、`volatile`、`restrict`、プラットフォーム分岐、手動アライメント。
+
 ## References
 
-- [C Best Practices & Idioms](references/best-practices.md)
-- [SEI CERT C Coding Standard](references/c-coding-standard-summary.md)
+_このスキルは自己完結型です。詳細なリファレンスは必要に応じて外部ドキュメントを参照してください。_

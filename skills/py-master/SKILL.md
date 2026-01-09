@@ -40,7 +40,68 @@ description: "Master of Pythonic design and performance. Expert in PEP standards
 - **Performance**: 不要な中間リスト、N+1、データ構造選択、プロファイル方針
 - **Tests**: pytest の fixture/parametrize、境界ケース、I/O のモック戦略
 
+## Common Pitfalls (よくある間違い)
+
+### ❌ 悪い例
+
+```python
+# NG: Any の乱用
+from typing import Any
+def process(data: Any) -> Any:  # 型情報がない
+    return data
+
+# NG: 例外を握りつぶす
+try:
+    risky_operation()
+except:  # すべての例外を捕捉
+    pass
+
+# NG: async 関数で blocking I/O
+async def fetch():
+    import time
+    time.sleep(5)  # イベントループをブロック
+
+# NG: リソースのクローズ漏れ
+f = open("file.txt")
+data = f.read()
+# クローズしていない
+```
+
+### ✅ 良い例
+
+```python
+# OK: 具体的な型
+from typing import List, Dict
+def process(data: List[str]) -> Dict[str, int]:
+    return {s: len(s) for s in data}
+
+# OK: 例外を適切に処理
+try:
+    risky_operation()
+except ValueError as e:
+    logger.error("Invalid value: %s", e)
+    raise  # 再送出
+
+# OK: async で非同期 I/O
+import asyncio
+async def fetch():
+    await asyncio.sleep(5)  # 非同期
+
+# OK: with でリソース管理
+with open("file.txt") as f:
+    data = f.read()
+# 自動的にクローズ
+```
+
+## AI-Specific Guidelines (実装時の優先順位)
+
+1. **型ヒントを必ず付ける**: public API には必須。`Any` は境界でのみ使用し、内部で絞り込む。
+2. **Pydantic でバリデーション**: 外部入力（JSON/API）は Pydantic で検証する。
+3. **例外は明示的に**: 握りつぶさず、ドメイン例外として定義して伝播させる。
+4. **async は I/O-bound のみ**: CPU-bound なら `ProcessPoolExecutor` を検討。
+5. **リソースは with**: ファイル、DB 接続、ロックは必ず `with` で管理する。
+6. **テストは pytest**: fixture と parametrize を活用し、境界ケースを網羅する。
+
 ## References
 
-- [Pythonic Idioms & Type Safety](references/best-practices.md)
 - [The Zen of Python (PEP 20)](references/pep20-summary.md)

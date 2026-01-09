@@ -43,6 +43,68 @@ description: "Java + Spring expert. Master of modern Java (11/17/21), Spring Boo
 - **Performance**: 不要なオブジェクト生成、過剰な同期、ブロッキング I/O の混入（特に WebFlux）
 - **Operability**: タイムアウト、リトライ方針、サーキット/バックプレッシャ、shutdown/graceful
 
+## Common Pitfalls (よくある間違い)
+
+### ❌ 悪い例
+
+```java
+// NG: フィールド注入
+@Autowired
+private UserService userService;  // テスト困難
+
+// NG: @Transactional の自己呼び出し
+@Transactional
+public void outer() {
+    inner();  // トランザクションが効かない
+}
+private void inner() { ... }
+
+// NG: JPA での N+1
+List<User> users = userRepository.findAll();
+for (User user : users) {
+    user.getOrders().size();  // 遅延ロードで N+1
+}
+
+// NG: Optional の誤用
+public Optional<User> getUser(Long id) {
+    return Optional.of(userRepository.findById(id).orElse(null));  // null を包む
+}
+```
+
+### ✅ 良い例
+
+```java
+// OK: コンストラクタ注入
+private final UserService userService;
+public UserController(UserService userService) {
+    this.userService = userService;
+}
+
+// OK: 別クラスに分離してトランザクション適用
+@Transactional
+public void outer() {
+    anotherService.inner();  // proxy を経由
+}
+
+// OK: fetch join で一括取得
+@Query("SELECT u FROM User u LEFT JOIN FETCH u.orders")
+List<User> findAllWithOrders();
+
+// OK: Optional は返り値でのみ使用
+public Optional<User> getUser(Long id) {
+    return userRepository.findById(id);
+}
+```
+
+## AI-Specific Guidelines (実装時の優先順位)
+
+1. **コンストラクタ注入**: フィールド注入を避け、依存をコンストラクタで明示する。final にする。
+2. **@Transactional の境界**: Service 層で適用し、proxy を意識する。自己呼び出しは効かない。
+3. **JPA は fetch join**: N+1 を避けるため、必要な関連を `JOIN FETCH` で一括取得する。
+4. **DTO と Entity を分離**: Controller では DTO、永続化層では Entity、境界で mapping する。
+5. **Optional は返り値のみ**: フィールドや引数には使わない。null の方が自然な場面では null を使う。
+6. **ログと例外**: `@ControllerAdvice` で例外を一元処理し、機微情報はログに出さない。
+
 ## References
 
 - [Java Backend Review Guide](references/java-backend-review.md)
