@@ -43,6 +43,89 @@ description: "Expert-level Material UI (MUI) architect. Master of component comp
 - **Consistency**: `sx`/`styled`/`styleOverrides`/`variants` の使い分けがチーム規約に沿っているか
 - **Accessibility**: コントラスト、`:focus-visible`、`aria-*`、ラベル/説明文、キーボード操作
 
+## Common Pitfalls (よくある間違い)
+
+### ❌ 悪い例
+
+```tsx
+// NG: ハードコードされた値
+<Box sx={{ padding: "16px", color: "#1976d2" }}>
+    {" "}
+    // theme を使わない Content
+</Box>;
+
+// NG: 毎レンダリングで sx object を生成
+function Component({ isActive }: Props) {
+    return (
+        <Button sx={{ bgcolor: isActive ? "primary.main" : "grey.500" }}>
+            // 毎回新しい object
+        </Button>
+    );
+}
+
+// NG: 不要な Box のネスト
+<Box>
+    <Box>
+        <Box>
+            <Typography>Deep nesting</Typography>
+        </Box>
+    </Box>
+</Box>;
+
+// NG: Theme の型拡張なし
+const theme = createTheme({
+    custom: { brand: "#123456" }, // 型エラー無視
+});
+```
+
+### ✅ 良い例
+
+```tsx
+// OK: Theme を使う
+<Box sx={{ p: 2, color: "primary.main" }}>Content</Box>;
+
+// OK: styled で安定した component
+const StyledButton = styled(Button, {
+    shouldForwardProp: (prop) => prop !== "isActive",
+})<{ isActive: boolean }>(({ theme, isActive }) => ({
+    backgroundColor: isActive
+        ? theme.palette.primary.main
+        : theme.palette.grey[500],
+}));
+
+// OK: 適切な component 選択
+<Stack spacing={2}>
+    <Typography>No unnecessary nesting</Typography>
+</Stack>;
+
+// OK: Module Augmentation で型拡張
+declare module "@mui/material/styles" {
+    interface Theme {
+        custom: {
+            brand: string;
+        };
+    }
+    interface ThemeOptions {
+        custom?: {
+            brand?: string;
+        };
+    }
+}
+
+const theme = createTheme({
+    custom: { brand: "#123456" }, // 型安全
+});
+```
+
+## AI-Specific Guidelines (実装時の優先順位)
+
+1. **Theme ファースト**: 色・spacing・typography はすべて theme 経由。ハードコード禁止。
+2. **型安全な Theme**: Module Augmentation で theme を拡張し、`sx` も型チェックを受ける。
+3. **Stable styling**: 動的スタイルは `styled()` + props か CSS 変数で。毎回 `sx` object 生成しない。
+4. **Component 合成**: `slots`/`slotProps` を優先。wrapper は最小限に。
+5. **Next.js 統合**: `'use client'` は最小単位に。公式の EmotionCache/StyledRegistry パターンを使う。
+6. **Accessibility**: `aria-*`, `:focus-visible`, コントラスト比を必ずチェック。
+
 ## References
 
 - [MUI Best Practices](references/best-practices.md)
