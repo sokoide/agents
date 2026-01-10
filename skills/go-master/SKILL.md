@@ -30,6 +30,8 @@ description: "Expert-level Go architect. Master of Effective Go, idiomatic patte
 3. **Context propagation**: `context.Context` は第 1 引数、構造体フィールドに保持しない。
 4. **Interfaces at the consumer**: インターフェースは利用側で定義し、返り値は具体型（Accept interfaces, return structs）。
 5. **Concurrency is owned**: ゴルーチンを起こした側が停止/回収責務を持つ（リーク禁止）。
+6. **Table-driven tests**: テストはテーブル駆動を基本とし、`t.Helper()` や `t.Parallel()` を活用して保守性と実行速度を両立する。
+7. **Error Inspection**: エラー判定が必要な場合は `errors.Is` や `errors.As` を使い、型アサーションを避ける。
 
 ## Review Checklist (High-Signal)
 
@@ -108,6 +110,7 @@ slice = append(slice, 4)
 4. **インターフェースは小さく**: 1-3 メソッドの小さいインターフェースを消費側で定義する。
 5. **性能は計測してから**: 推測で最適化しない。`pprof` や `benchstat` で根拠を示す。
 6. **gofmt 必須**: コード生成後は必ず `gofmt` で整形する。
+7. **Table-driven logic**: ロジックの実装と同時にテーブル駆動テストを生成し、正常/異常系の境界条件を網羅する。
 
 ## References
 
