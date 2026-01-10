@@ -95,4 +95,4 @@ return result;
 
 ## References
 
-_このスキルは自己完結型です。詳細なリファレンスは必要に応じて外部ドキュメントを参照してください。_
+- [C Standard & Memory Safety Review Guide](references/c-standard-review.md)

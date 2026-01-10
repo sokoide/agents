@@ -136,6 +136,14 @@ All reviews, judgments, and refactoring advice **MUST conform to that document**
 
 ---
 
+## AI-Specific Guidelines (実装時の優先順位)
+
+1. **依存方向を最優先**: 技術的な容易さ（ライブラリの便利機能等）よりも、レイヤー境界と依存方向の遵守を優先する。
+2. **型を安易に共有しない**: レイヤーを跨ぐ際は、面倒でも DTO や Mapping を定義し、Entity が外部（Framework/Infra）の都合に染まらないようにする。
+3. **Port は Domain が定義**: 「何が必要か」を Domain が決め、「どう実現するか」を Adapter が決める。インターフェースの定義場所を間違えない。
+4. **Error は抽象化**: データベース固有のエラー（`sql.ErrNoRows` 等）を UseCase 以上に漏らさない。必ず Domain Error に変換する。
+5. **Context の伝播**: トランザクションやトレース情報の伝播に `context.Context` を正しく使い、関数のシグネチャを一貫させる。
+
 ## Positioning
 
 - This skill enforces **architectural correctness**, not coding style.
