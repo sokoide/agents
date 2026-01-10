@@ -34,6 +34,8 @@ description: "Ebitengine (Ebiten) expert for Go 2D games. Use for designing, imp
 4. **変換順序を明示**: `GeoM.Translate/Scale/Rotate` の順序で結果が変わる。回転中心/拡大中心は「原点移動 → 回転/拡大 → 戻す」で表現する。
 5. **入力は edge を使う**: トグル/単発アクションは `inpututil.IsKeyJustPressed` / `inpututil.IsMouseButtonJustPressed` を使い、押しっぱなしは `ebiten.IsKeyPressed`。
 6. **画像は \*ebiten.Image を所有する**: `SubImage` は `image.Image` を返すので、必要なら `*ebiten.Image` へ変換/管理（スプライトシートの切り出しは一度だけ）。
+7. **TPS/FPS Control**: 物理演算は TPS (default 60) に依存させ、`ebiten.SetWindowResizingMode` でリサイズ挙動を制御する。
+8. **Audio Context**: `audio.Context` はシングルトンとして管理し、初期化コストとリソースリークを防ぐ。
 
 ## Review Checklist (High-Signal)
 
@@ -112,6 +114,7 @@ func (g *Game) Update() error {
 4. **入力は edge 検出**: トグル/単発は `inpututil.IsKeyJustPressed`、ホールドは `ebiten.IsKeyPressed`。
 5. **GeoM の順序を意識**: 変換の順序（translate/rotate/scale）で結果が変わる。コメントで意図を明記。
 6. **画像は一度だけロード**: スプライトシートの切り出しは初期化時に行い、`SubImage` を毎フレーム生成しない。
+7. **Shader Utilization**: 複雑なピクセル操作は CPU ではなく Kage (Shading Language) にオフロードする。
 
 ## References
 

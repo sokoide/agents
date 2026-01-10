@@ -32,6 +32,8 @@ description: "Expert-level Go architect. Master of Effective Go, idiomatic patte
 5. **Concurrency is owned**: ゴルーチンを起こした側が停止/回収責務を持つ（リーク禁止）。
 6. **Table-driven tests**: テストはテーブル駆動を基本とし、`t.Helper()` や `t.Parallel()` を活用して保守性と実行速度を両立する。
 7. **Error Inspection**: エラー判定が必要な場合は `errors.Is` や `errors.As` を使い、型アサーションを避ける。
+8. **Structured Logging**: ログ出力には標準の `log/slog` を使用し、構造化されたキーバリュー形式で記録する。
+9. **Generics Hygiene**: ジェネリクスは汎用的なコンテナやアルゴリズムに限定し、通常のビジネスロジックでの乱用を避ける。
 
 ## Review Checklist (High-Signal)
 

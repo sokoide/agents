@@ -32,7 +32,9 @@ description: "Expert-level Material UI (MUI) architect. Master of component comp
 2. **Type-Safe Theme**: theme 拡張は Module Augmentation で型定義し、`sx` も `Theme` で型付けする。
 3. **Composition over wrappers**: まず既存コンポーネントの `slots`/`slotProps` と `component` を使い、必要なときだけ `styled()`/自作 wrapper を追加する。
 4. **Stable styling**: 頻繁に変わる値に連動する `sx`（inline object 生成含む）を抑え、`styled()` + props / CSS 変数 / theme `variants` を選ぶ。
-5. **Next.js boundary hygiene**: `'use client'` は最小単位に閉じ、SSR では公式のスタイル注入パターンを優先して FOUC/ハイドレーション不整合を避ける。
+5. **Pigment CSS Ready**: ランタイムコスト削減のため、静的なスタイル抽出を意識し、将来的な Pigment CSS 移行に備える。
+6. **Grid v2**: レイアウトには従来の `Grid` ではなく、機能強化された `Grid2` (`@mui/material/Grid2`) を使用する。
+7. **Loading Strategy**: データ取得中は `<Skeleton />` を配置し、CLS (Cumulative Layout Shift) を防ぐ。
 
 ## Review Checklist (High-Signal)
 
@@ -124,7 +126,7 @@ const theme = createTheme({
 3. **Stable styling**: 動的スタイルは `styled()` + props か CSS 変数で。毎回 `sx` object 生成しない。
 4. **Component 合成**: `slots`/`slotProps` を優先。wrapper は最小限に。
 5. **Next.js 統合**: `'use client'` は最小単位に。公式の EmotionCache/StyledRegistry パターンを使う。
-6. **Accessibility**: `aria-*`, `:focus-visible`, コントラスト比を必ずチェック。
+6. **Use Grid2**: レイアウトには新しい `Grid2` コンポーネントを使用する。
 
 ## References
 

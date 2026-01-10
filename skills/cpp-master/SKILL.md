@@ -33,6 +33,8 @@ description: "High-performance C++ architect. Expert in C++11/14/17/20/23, RAII,
 3. **Exception Safety**: 例外を使うなら保証（basic/strong/nothrow）を明示し、デストラクタで例外を投げない。必要に応じて `noexcept` を付与する。
 4. **Zero-cost abstractions**: 仮想よりテンプレート/`std::variant`/`std::function` を含めてトレードオフを評価する（可読性・バイナリサイズ・分岐予測）。
 5. **Performance hygiene**: 不要コピー/アロケを避ける（`reserve`, ムーブ、`emplace`）。ただし可読性を損なう最適化は計測後に行う。
+6. **No C-style casts**: `static_cast` 等の C++ キャストを厳守し、意図を明示する。
+7. **Header hygiene**: Include What You Use (IWYU) を守り、前方宣言を活用してビルド時間を短縮する。
 
 ## Review Checklist (High-Signal)
 
@@ -107,6 +109,7 @@ std::vector<std::string> filter(const std::vector<std::string>& items) {
 4. **参照 vs ポインタ**: nullable なら `T*`、non-null なら `T&`。C++20 以降なら `std::optional<std::reference_wrapper<T>>` も検討。
 5. **例外安全性を明言**: basic/strong/nothrow のどれを提供するか、特に public API では明示する。
 6. **テンプレートエラーは予防**: `static_assert` や Concepts で制約を早期に示す。
+7. **Modern Loops**: C++20 なら `<ranges>` とパイプラインを推奨。そうでなければ範囲 for 文を使用する。
 
 ## References
 

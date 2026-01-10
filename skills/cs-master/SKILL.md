@@ -33,6 +33,8 @@ description: "C# + .NET expert. Master of modern C# (10/11/12), ASP.NET Core, de
 4. **Async all the way**: I/O は async、同期ブロッキング（`.Result`, `.Wait()`）は禁止。
 5. **Cancellation & timeouts**: `CancellationToken` を境界から伝播し、外部 I/O にタイムアウトを設定する。
 6. **Observability by default**: 構造化ログ、相関 ID、メトリクスを前提に設計する（機微情報はログ禁止）。
+7. **Global Exception Handling**: ASP.NET Core 8+ では `IExceptionHandler` を実装し、例外処理を一元化する。
+8. **Nullable Reference Types**: `<Nullable>enable</Nullable>` を前提とし、null 警告をゼロにする。
 
 ## Review Checklist (High-Signal)
 
@@ -99,6 +101,8 @@ services.AddScoped<IUserService, UserService>();
 4. **EF Core は Include で**: N+1 を避けるため、必要なナビゲーションプロパティは明示的に Include する。
 5. **DTO と Entity を分離**: API DTO と EF Entity を混在させず、境界で mapping する（AutoMapper や Mapster）。
 6. **構造化ログ**: `ILogger<T>` で構造化ログ、機微情報は絶対にログに出さない。
+7. **Resilience**: HTTP リクエストや DB 接続には `Microsoft.Extensions.Http.Resilience` (Polly) でリトライポリシーを適用する。
+8. **LINQ Hygiene**: 遅延評価を意識し、多重列挙を避けるため適切なタイミングで `.ToListAsync()` する。
 
 ## References
 

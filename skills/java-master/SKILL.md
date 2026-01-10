@@ -32,6 +32,8 @@ description: "Java + Spring expert. Master of modern Java (11/17/21), Spring Boo
 4. **Transactions are explicit**: `@Transactional` の境界を明示し、read/write と propagation を意図して選ぶ。
 5. **Null is a bug source**: `Optional` は “返り値” の表現として限定的に使い、フィールドに濫用しない。
 6. **Observability by default**: ログ/メトリクス/トレースの境界（外部 I/O、遅い SQL）を意識して設計する。
+7. **Modern Data Structures**: Java 14+ では DTO に `record` を使用し、不変性とボイラープレート削除を両立する。
+8. **Testing with Realism**: DB 統合テストには H2 ではなく Testcontainers を使用し、本番環境との差異を排除する。
 
 ## Review Checklist (High-Signal)
 
@@ -104,6 +106,7 @@ public Optional<User> getUser(Long id) {
 4. **DTO と Entity を分離**: Controller では DTO、永続化層では Entity、境界で mapping する。
 5. **Optional は返り値のみ**: フィールドや引数には使わない。null の方が自然な場面では null を使う。
 6. **ログと例外**: `@ControllerAdvice` で例外を一元処理し、機微情報はログに出さない。
+7. **Resilience**: 外部通信には Resilience4j を適用し、リトライやサーキットブレーカーを実装する。
 
 ## References
 

@@ -10,7 +10,7 @@ description: >
 
 ---
 
-This skill **strictly follows the rules defined in**  
+This skill **strictly follows the rules defined in**
 [`references/clean-arch-4layer.md`](references/clean-arch-4layer.md).
 
 All reviews, judgments, and refactoring advice **MUST conform to that document**.
@@ -31,15 +31,15 @@ All reviews, judgments, and refactoring advice **MUST conform to that document**
 
 ## Core Philosophy
 
-1. **Domain-Centricity**  
-   ソフトウェアの価値は Domain（ビジネスルール）にある。  
+1. **Domain-Centricity**
+   ソフトウェアの価値は Domain（ビジネスルール）にある。
    DB・HTTP・Framework は交換可能な詳細である。
 
-2. **Strict Dependency Rule**  
-   依存関係は常に外側から内側へ向かう。  
+2. **Strict Dependency Rule**
+   依存関係は常に外側から内側へ向かう。
    Domain は何者にも依存しない。
 
-3. **Explicit Outer Layers**  
+3. **Explicit Outer Layers**
    外側を以下の 2 種類に分離する。
    - **Framework Layer**（Web / gRPC / CLI）
    - **Infra Adapter Layer**（DB / 外部 API / File）
@@ -108,6 +108,15 @@ All reviews, judgments, and refactoring advice **MUST conform to that document**
 - UseCase input / output が明確に定義されているか
 - Entity が Framework DTO と混在していないか
 - Mapping の責務が一貫しているか
+
+### 6. Transaction Management (Unit of Work)
+
+- UseCase 層がトランザクション境界を制御しているか
+- `sql.Tx` などの技術詳細が Domain/UseCase に漏れていないか（Closure パターンや Context 経由での伝播を検討）
+
+### 7. Configuration Injection
+
+- 設定値（Config struct）は UseCase/Adapter に注入され、Domain は設定値を知らない状態になっているか
 
 ---
 

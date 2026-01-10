@@ -29,7 +29,9 @@ description: "High-integrity Rust architect. Master of ownership, borrowing, lif
 2. **No panics in libraries**: 公開 API では `unwrap/expect` を避け、`Result` で返す（アプリ境界でのみパニックを検討）。
 3. **Error boundaries**: 公開 API は安定したエラー型（`thiserror` 等）、アプリ内部は `anyhow` 等を使い分ける。
 4. **Async correctness**: `Send`/`Sync`、キャンセル、バックプレッシャ、ブロッキング呼び出し混入を常に点検する。
-5. **Trait design**: dynamic dispatch と generic のトレードオフ（コンパイル時間/コードサイズ/柔軟性）を明示する。
+5. **Observability**: async 環境では `log` ではなく `tracing` を使用し、スパンと構造化ログで文脈を追跡する。
+6. **Clippy Compliance**: `cargo clippy` に従い、警告を無視する場合は `#[allow(...)]` に理由をコメントで添える。
+7. **Typestate Pattern**: 複雑な状態遷移は、コンパイル時に順序を強制するために Typestate Pattern を検討する。
 
 ## Review Checklist (High-Signal)
 
@@ -97,6 +99,7 @@ fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
 4. **エラー型は明示**: public API では `thiserror` で独自エラー型、内部では `anyhow` を検討。
 5. **async は Send/Sync を意識**: `!Send` なデータを `.await` を跨いで保持しない。
 6. **unsafe は最小限**: invariant をコメントで明記し、safe な wrapper で隠蔽する。
+7. **Iterators over Loops**: インデックスアクセスよりもイテレータチェーンを使用し、境界チェック回避と可読性を優先する。
 
 ## References
 

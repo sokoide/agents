@@ -29,7 +29,9 @@ description: "Master of Pythonic design and performance. Expert in PEP standards
 2. **Typed public surface**: 公開関数/メソッド/モデルには型ヒントを付け、`Any` を増殖させない。
 3. **Explicit error boundaries**: 例外を握りつぶさず、ドメイン例外/インフラ例外を分離する。
 4. **Async correctness**: `async` は I/O-bound に限定し、ブロッキング I/O は executor に逃がす。
-5. **Batteries included**: まず標準ライブラリを検討し、依存追加は根拠を示す。
+5. **Modern Typing**: Python 3.10+ では `List`/`Dict` ではなく `list`/`dict` を、`Union` ではなく `|` を使用する。
+6. **Logging Hygiene**: `print` は禁止。標準 `logging` または `structlog` を使用し、レベルとフォーマットを管理する。
+7. **Dependency Management**: プロジェクト管理には `uv` または `poetry` を推奨し、再現性を担保する。
 
 ## Review Checklist (High-Signal)
 
@@ -70,9 +72,8 @@ data = f.read()
 ### ✅ 良い例
 
 ```python
-# OK: 具体的な型
-from typing import List, Dict
-def process(data: List[str]) -> Dict[str, int]:
+# OK: 具体的な型 (Modern Python)
+def process(data: list[str]) -> dict[str, int]:
     return {s: len(s) for s in data}
 
 # OK: 例外を適切に処理
@@ -100,7 +101,7 @@ with open("file.txt") as f:
 3. **例外は明示的に**: 握りつぶさず、ドメイン例外として定義して伝播させる。
 4. **async は I/O-bound のみ**: CPU-bound なら `ProcessPoolExecutor` を検討。
 5. **リソースは with**: ファイル、DB 接続、ロックは必ず `with` で管理する。
-6. **テストは pytest**: fixture と parametrize を活用し、境界ケースを網羅する。
+6. **Modern Syntax**: 型ヒントには組み込み型 (`list`, `dict`) と `|` 演算子を優先する。
 
 ## References
 

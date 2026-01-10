@@ -26,10 +26,12 @@ description: "System-level C architect. Expert in C99/C11/C17/C23, manual memory
 ## Design & Coding Rules (Expert Defaults)
 
 1. **Resource Management**: `malloc`/`free` の対を明確にする。関数内では `goto error;` パターンによる一元的なクリーンアップを推奨する。
-2. **Memory Safety**: バッファオーバーフローを防ぐ（`strncpy` などのサイズ指定関数、境界チェック）。ポインタの NULL チェックを徹底する。
-3. **Error Handling**: 返り値によるエラー伝播を基本とする。無視されがちな返り値（`(void)` キャスト等）に注意を払う。
-4. **Data Hiding**: 必要に応じて Opaque Pointer (不透明ポインタ) を使用し、実装詳細を隠蔽して ABI 安定性を保つ。
-5. **Modern C Features**: 可能な場合、C99 の指定初期化子、`stdbool.h`、`stdint.h`、`restrict`、C11 の `_Generic` や `_Atomic` を適切に使用する。
+2. **Memory Safety**: バッファ操作には `snprintf` などの安全な関数を使用し、`strncpy` のヌル終端リスクを避ける。
+3. **Const Correctness**: ポインタ引数の不変性を `const` で明示し、API の入力/出力を厳密に区別する。
+4. **Error Handling**: 返り値によるエラー伝播を基本とする。無視されがちな返り値（`(void)` キャスト等）に注意を払う。
+5. **Data Hiding**: 必要に応じて Opaque Pointer (不透明ポインタ) を使用し、実装詳細を隠蔽して ABI 安定性を保つ。
+6. **Modern C Features**: 可能な場合、C99 の指定初期化子、`stdbool.h`、`stdint.h`、`restrict`、C11 の `_Generic` や `_Atomic` を適切に使用する。
+7. **Tooling & Sanitizers**: 可能な限り AddressSanitizer (ASan) や UndefinedBehaviorSanitizer (UBSan) を有効にして検証する。
 
 ## Review Checklist (High-Signal)
 
@@ -38,7 +40,7 @@ description: "System-level C architect. Expert in C99/C11/C17/C23, manual memory
 - **Pointers**: 二重解放、Use-after-free、NULL ポインタ参照、関数ポインタの型安全性
 - **Portability**: 構造体のパディング/アライメント、エンディアン依存、`int` サイズへの依存
 - **Concurrency**: データ競合、`volatile` の誤用（同期プリミティブではない）、アトミック操作の整合性
-- **Build/Organization**: ヘッダガードの徹底、グローバル変数の最小化（`static` の活用）、循環依存の回避
+- **Macros**: `do { ... } while(0)` パターン、引数の括弧囲み、副作用の回避など、マクロの安全性を確認
 
 ## Common Pitfalls (よくある間違い)
 
@@ -63,10 +65,9 @@ return result;  // condition が false の時 UB
 ### ✅ 良い例
 
 ```c
-// OK: サイズ境界チェック
+// OK: snprintf で安全にフォーマット/コピー
 char buf[10];
-strncpy(buf, user_input, sizeof(buf) - 1);
-buf[sizeof(buf) - 1] = '\0';
+snprintf(buf, sizeof(buf), "%s", user_input);
 
 // OK: goto によるエラーパス一元管理
 char *p = malloc(100);

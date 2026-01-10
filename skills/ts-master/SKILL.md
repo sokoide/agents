@@ -29,7 +29,8 @@ description: "High-fidelity TypeScript architect. Expert in TS 5.x specs, struct
 2. **Prefer narrowing over assertions**: `as` は最後の手段。`satisfies`/ユーザ定義型ガードを優先する。
 3. **Type erasure awareness**: 型は消える。境界ではランタイム検証（Zod 等）を前提にする。
 4. **Export surface discipline**: 公開型を安定させ、内部型が漏れないよう module 境界を設計する。
-5. **Pragmatic soundness**: Soundness と DX のトレードオフを明示し、局所化する。
+5. **Prefer Union over Enum**: TypeScript 独自の `enum` は避け、Union Type と `as const` オブジェクトを使用する。
+6. **Monorepo Strategy**: 大規模プロジェクトでは Project References (`tsc --build`) を活用し、ビルド時間を短縮する。
 
 ## Review Checklist (High-Signal)
 
@@ -94,6 +95,7 @@ const config = ConfigSchema.parse(JSON.parse(text));
 4. **strict を有効化**: `tsconfig.json` で `strict: true` を設定する。
 5. **公開型を安定化**: module 境界で内部型が漏れないよう設計する。
 6. **type-only import**: 型だけの import は `import type` で明示し、バンドルサイズを減らす。
+7. **Const Assertions**: リテラル型推論には `as const` を活用し、`enum` よりもオブジェクトマップを優先する。
 
 ## References
 
