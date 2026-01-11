@@ -39,6 +39,10 @@ format:
 install:
 	@set -eu; \
 	mkdir -p "$(INSTALL_DIR)"; \
+	if [ -f "$(SKILLS_DIR)/index.json" ]; then \
+		echo "Installing $(SKILLS_DIR)/index.json -> $(INSTALL_DIR)/index.json"; \
+		cp "$(SKILLS_DIR)/index.json" "$(INSTALL_DIR)/index.json"; \
+	fi; \
 	find "$(SKILLS_DIR)" -maxdepth 1 -mindepth 1 -type d -print | while read -r d; do \
 		base=$$(basename "$$d"); \
 		if [ "$$base" = ".system" ] && [ "$(INCLUDE_SYSTEM)" != "1" ]; then \
