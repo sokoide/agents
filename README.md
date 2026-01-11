@@ -41,9 +41,28 @@ make install INCLUDE_SYSTEM=1
 
 ## Gemini CLI での使い方
 
-Gemini CLI（Serena）では、`.gemini/GEMINI.md` に以下の設定を追加することで、`$` 記号を使ってスキルを即座に呼び出すことができます。
 
-### 設定例（.gemini/GEMINI.md）
+### おすすめ: gemini-cli@preview
+
+gemini-cli@previewでskillsがサポートされていますので、preview版の利用をお勧めします。
+
+```bash
+brew uinstall gemini-cli
+npm uninstall -g @google/gemini-cli
+sudo rm -rf /opt/homebrew/lib/node_modules/@google/gemini-cli
+npm install -g @google/gemini-cli@preview
+```
+
+install後<https://geminicli.com/docs/cli/tutorials/skills-getting-started/>に従って有効化してください。
+
+初回のみ`cd $HOME/.gemini; mv skills skills.bak; ln -s $THIS_REPO/skills $HOME/.gemini/skills`
+
+### gemini-cli@latest
+
+gemini-cli@latestでは、2026/1/11現在まだskillsは使用できません。
+`.gemini/GEMINI.md` に以下の設定を追加することで、`$` 記号を使ってスキルを即座に呼び出すことができます。
+
+#### 設定例（.gemini/GEMINI.md）
 
 ```markdown
 ## skills
