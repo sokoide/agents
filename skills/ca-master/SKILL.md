@@ -1,9 +1,9 @@
 ---
 name: cleanarch-master
 description: >
-  Clean Architecture master for Go-style 4-layer architecture.
-  Enforces strict dependency rules, domain ownership of ports,
-  and clear separation between Framework and Infra Adapters.
+    Clean Architecture master for Go-style 4-layer architecture.
+    Enforces strict dependency rules, domain ownership of ports,
+    and clear separation between Framework and Infra Adapters.
 ---
 
 # Clean Architecture Master (4-Layer + Framework)
@@ -41,8 +41,8 @@ All reviews, judgments, and refactoring advice **MUST conform to that document**
 
 3. **Explicit Outer Layers**
    外側を以下の 2 種類に分離する。
-   - **Framework Layer**（Web / gRPC / CLI）
-   - **Infra Adapter Layer**（DB / 外部 API / File）
+    - **Framework Layer**（Web / gRPC / CLI）
+    - **Infra Adapter Layer**（DB / 外部 API / File）
 
 ---
 
@@ -152,3 +152,8 @@ All reviews, judgments, and refactoring advice **MUST conform to that document**
 ## References
 
 - [Clean Arch](references/clean-arch-4layer.md)
+- [Common Pitfalls](references/pitfalls.md)
+
+## Resources & Scripts
+
+- [Code Check Script](../scripts/check.sh)

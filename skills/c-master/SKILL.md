@@ -96,3 +96,8 @@ return result;
 ## References
 
 - [C Standard & Memory Safety Review Guide](references/c-standard-review.md)
+- [Common Pitfalls](references/pitfalls.md)
+
+## Resources & Scripts
+
+- [Code Check Script](scripts/check.sh)

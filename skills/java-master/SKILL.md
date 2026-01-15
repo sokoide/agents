@@ -108,6 +108,11 @@ public Optional<User> getUser(Long id) {
 6. **ログと例外**: `@ControllerAdvice` で例外を一元処理し、機微情報はログに出さない。
 7. **Resilience**: 外部通信には Resilience4j を適用し、リトライやサーキットブレーカーを実装する。
 
+## Resources & Scripts
+
+- **[Common Pitfalls](references/pitfalls.md)**: Common mistakes and best practices.
+- **[Check Script](scripts/check.sh)**: Automated checks (`mvn`, `gradle`).
+
 ## References
 
 - [Java Backend Review Guide](references/java-backend-review.md)

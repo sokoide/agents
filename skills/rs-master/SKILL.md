@@ -101,6 +101,11 @@ fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
 6. **unsafe は最小限**: invariant をコメントで明記し、safe な wrapper で隠蔽する。
 7. **Iterators over Loops**: インデックスアクセスよりもイテレータチェーンを使用し、境界チェック回避と可読性を優先する。
 
+## Resources & Scripts
+
+- **[Common Pitfalls](references/pitfalls.md)**: Common mistakes and best practices.
+- **[Check Script](scripts/check.sh)**: Automated checks (`cargo fmt`, `check`, `clippy`).
+
 ## References
 
 - [Rust API Guidelines](references/rust-api-guidelines-summary.md)

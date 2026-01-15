@@ -56,5 +56,5 @@ Antigravityのchat欄で以下のようにお願いする方がいいかもし�
 Goのコーディング規約とhttps://go.dev/doc/effective_goをもとに、新しいSkillを作成して。.agent/skills/go-codereviewer/ 内に SKILL.md と必要なスクリプト・リソースを配置して。Code Reviewに特化した品質・パフォーマンス・ソフトウェアデザインのスペシャリストスキル。
 ```
 
-* このRepoでは共通SKILLを`~/.agent/skills`に配置します
-* 上記のプロンプトではProjectごとのAgent SKILLが`$workspace-dir/.agent/skills`(agentsではなく、単数)に作成されます
+- このRepoでは共通SKILLを`~/.agent/skills`に配置します
+- 上記のプロンプトではProjectごとのAgent SKILLが`$workspace-dir/.agent/skills`(agentsではなく、単数)に作成されます

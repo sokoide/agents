@@ -119,3 +119,8 @@ func (g *Game) Update() error {
 ## References
 
 - [Ebitengine Cheatsheet (excerpt)](references/cheatsheet.md)
+- [Common Pitfalls](references/pitfalls.md)
+
+## Resources & Scripts
+
+- [Code Check Script](../scripts/check.sh)

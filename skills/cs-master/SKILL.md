@@ -104,6 +104,11 @@ services.AddScoped<IUserService, UserService>();
 7. **Resilience**: HTTP リクエストや DB 接続には `Microsoft.Extensions.Http.Resilience` (Polly) でリトライポリシーを適用する。
 8. **LINQ Hygiene**: 遅延評価を意識し、多重列挙を避けるため適切なタイミングで `.ToListAsync()` する。
 
+## Resources & Scripts
+
+- **[Common Pitfalls](references/pitfalls.md)**: Common mistakes and best practices.
+- **[Check Script](scripts/check.sh)**: Automated checks (`dotnet build`, `test`, `format`).
+
 ## References
 
 - [Dotnet Backend Review Guide](references/dotnet-backend-review.md)

@@ -114,3 +114,8 @@ std::vector<std::string> filter(const std::vector<std::string>& items) {
 ## References
 
 - [C++ Core Guidelines](references/cpp-core-guidelines-summary.md)
+- [Common Pitfalls](references/pitfalls.md)
+
+## Resources & Scripts
+
+- [Code Check Script](scripts/check.sh)

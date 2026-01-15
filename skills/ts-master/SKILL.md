@@ -97,6 +97,11 @@ const config = ConfigSchema.parse(JSON.parse(text));
 6. **type-only import**: 型だけの import は `import type` で明示し、バンドルサイズを減らす。
 7. **Const Assertions**: リテラル型推論には `as const` を活用し、`enum` よりもオブジェクトマップを優先する。
 
+## Resources & Scripts
+
+- **[Common Pitfalls](references/pitfalls.md)**: Common mistakes and best practices.
+- **[Check Script](scripts/check.sh)**: Automated checks (`tsc`, `eslint`).
+
 ## References
 
 - [Enterprise Best Practices](references/best-practices.md)

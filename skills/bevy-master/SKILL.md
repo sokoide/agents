@@ -105,3 +105,8 @@ fn update(
 ## References
 
 - [Bevy docs.rs (excerpt)](references/docsrs.md)
+- [Common Pitfalls](references/pitfalls.md)
+
+## Resources & Scripts
+
+- [Code Check Script](../scripts/check.sh)

@@ -103,6 +103,11 @@ with open("file.txt") as f:
 5. **リソースは with**: ファイル、DB 接続、ロックは必ず `with` で管理する。
 6. **Modern Syntax**: 型ヒントには組み込み型 (`list`, `dict`) と `|` 演算子を優先する。
 
+## Resources & Scripts
+
+- **[Common Pitfalls](references/pitfalls.md)**: Common mistakes and best practices.
+- **[Check Script](scripts/check.sh)**: Automated checks (`ruff`, `mypy`, `black`).
+
 ## References
 
 - [The Zen of Python (PEP 20)](references/pep20-summary.md)
