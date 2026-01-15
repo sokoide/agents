@@ -46,6 +46,8 @@ description: "Expert-level Go architect. Master of Effective Go, idiomatic patte
 
 ## Common Pitfalls (よくある間違い)
 
+詳細なケーススタディは [Common Pitfalls](references/pitfalls.md) を参照。
+
 ### ❌ 悪い例
 
 ```go
@@ -113,6 +115,11 @@ slice = append(slice, 4)
 5. **性能は計測してから**: 推測で最適化しない。`pprof` や `benchstat` で根拠を示す。
 6. **gofmt 必須**: コード生成後は必ず `gofmt` で整形する。
 7. **Table-driven logic**: ロジックの実装と同時にテーブル駆動テストを生成し、正常/異常系の境界条件を網羅する。
+
+## Resources & Scripts
+
+- **[Common Pitfalls](references/pitfalls.md)**: アンチパターンと具体的な解決策。
+- **[Check Script](scripts/check.sh)**: 静的解析 (`go vet`, `staticcheck`) と整形確認の自動化。
 
 ## References
 

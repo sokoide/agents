@@ -26,12 +26,6 @@ make validate
 make install
 ```
 
-`skills/.system/` 配下も入れたい場合は:
-
-```sh
-make install INCLUDE_SYSTEM=1
-```
-
 ## Codex での使い方
 
 1) `make install` で `.agents/skills` に配置
@@ -51,5 +45,16 @@ install後<https://geminicli.com/docs/cli/tutorials/skills-getting-started/>に�
 
 ## 新しい skill を追加する
 
-Codexで`$skill-creator`
-Gemini CLI内部で`skill-creatorを起動`
+以下のように`skill-creator`がありますが、
+
+- Codexで`$skill-creator`
+- Gemini CLI内部で`skill-creatorを起動`
+
+Antigravityのchat欄で以下のようにお願いする方がいいかもしれません。
+
+```text
+Goのコーディング規約とhttps://go.dev/doc/effective_goをもとに、新しいSkillを作成して。.agent/skills/go-codereviewer/ 内に SKILL.md と必要なスクリプト・リソースを配置して。Code Reviewに特化した品質・パフォーマンス・ソフトウェアデザインのスペシャリストスキル。
+```
+
+* このRepoでは共通SKILLを`~/.agent/skills`に配置します
+* 上記のプロンプトではProjectごとのAgent SKILLが`$workspace-dir/.agent/skills`(agentsではなく、単数)に作成されます
