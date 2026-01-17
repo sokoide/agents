@@ -9,7 +9,7 @@
 
 ## 2. 名前付け規約
 
-* **パッケージ名**: 小文字1単語。インポート時に `search.String` のように自然に読める名前を選ぶ。
+* **パッケージ名**: 小文字 1 単語。インポート時に `search.String` のように自然に読める名前を選ぶ。
 * **Getter/Setter**: Getter に `Get` は不要（`Owner()`）。Setter は `SetOwner()`。
 * **インターフェース名**: メソッド名に `-er` を付ける（`Reader`, `Writer`, `Formatter`）。
 * **MixedCaps**: アンダースコアは使わず、`MixedCaps`（公開）または `mixedCaps`（非公開）を使用。

@@ -4,7 +4,7 @@
 
 ## Practical Interpretations (How to Apply)
 
-- **Readability counts**: 1回で読める制御フロー、過剰な抽象化/メタプログラミングを避ける。
+- **Readability counts**: 1 回で読める制御フロー、過剰な抽象化/メタプログラミングを避ける。
 - **Explicit > implicit**: 省略や暗黙変換に頼らず、意図（型・名前・境界）をコードで示す。
 - **Simple > complex**: まず単純な設計で成立させ、必要になってから一般化する。
 - **Errors should not pass silently**: 例外/戻り値を握りつぶさず、境界でログ/変換/再送出の方針を決める。

@@ -35,26 +35,26 @@ make install
 
 ## Gemini CLI での使い方
 
-gemini-cli@0.24.0でskillsがサポートされています。
-install後<https://geminicli.com/docs/cli/tutorials/skills-getting-started/>に従って有効化してください。
+gemini-cli@0.24.0で skills がサポートされています。
+install 後<https://geminicli.com/docs/cli/tutorials/skills-getting-started/>に従って有効化してください。
 
 1) `make install` で `.agents/skills` に配置
 2) 初回のみ`cd $HOME/.gemini; mv skills skills.bak; ln -s ~/.agents/skills`
-3) 依頼時に「go-masterを使って or using go-master,」と依頼する（例: `go-master`を使ってcode reviewして）
+3) 依頼時に「go-master を使って or using go-master,」と依頼する（例: `go-master`を使って code review して）
 スキル側の「First Questions」に答える情報（バージョン、制約、目標）を最初に渡すと精度が上がります。
 
 ## 新しい skill を追加する
 
 以下のように`skill-creator`がありますが、
 
-- Codexで`$skill-creator`
-- Gemini CLI内部で`skill-creatorを起動`
+- Codex で`$skill-creator`
+- Gemini CLI 内部で`skill-creatorを起動`
 
-Antigravityのchat欄で以下のようにお願いする方がいいかもしれません。
+Antigravity の chat 欄で以下のようにお願いする方がいいかもしれません。
 
 ```text
 Goのコーディング規約とhttps://go.dev/doc/effective_goをもとに、新しいSkillを作成して。.agent/skills/go-codereviewer/ 内に SKILL.md と必要なスクリプト・リソースを配置して。Code Reviewに特化した品質・パフォーマンス・ソフトウェアデザインのスペシャリストスキル。
 ```
 
-- このRepoでは共通SKILLを`~/.agent/skills`に配置します
-- 上記のプロンプトではProjectごとのAgent SKILLが`$workspace-dir/.agent/skills`(agentsではなく、単数)に作成されます
+- この Repo では共通 SKILL を`~/.agent/skills`に配置します
+- 上記のプロンプトでは Project ごとの Agent SKILL が`$workspace-dir/.agent/skills`(agents ではなく、単数)に作成されます

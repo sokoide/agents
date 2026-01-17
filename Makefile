@@ -25,15 +25,9 @@ validate:
 
 .PHONY: format
 format:
-	@set -eu; \
-	if ! command -v markdownlint >/dev/null 2>&1; then \
-		echo "markdownlint not found in PATH" >&2; \
-		exit 1; \
-	fi; \
-	markdownlint $$(find . -name '*.md' -type f \
-		-not -path './.git/*' \
-		-not -path './.serena/*' \
-		-not -path './skills/.system/*') --disable MD013
+	npx markdownlint "**/*.md" --ignore "conductor/*" --ignore "./.git/**" --ignore './.serena' --fix
+	npx textlint --fix "**/*.md"
+
 
 .PHONY: install
 install:

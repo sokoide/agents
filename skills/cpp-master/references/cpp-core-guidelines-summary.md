@@ -13,7 +13,7 @@
 
 - **Rule of Zero**: 自前のデストラクタ/コピー/ムーブが不要な設計を優先する。
 - **Prefer value types**: 共有所有より値/単独所有（`unique_ptr`）を優先し、共有は必要性を説明できる場合に限定。
-- **Express intent in types**: nullable を `T*` で表すなら必ず “nullable” である理由を明確にし、非nullable は `T&` を優先。
+- **Express intent in types**: nullable を `T*` で表すなら必ず “nullable” である理由を明確にし、非 nullable は `T&` を優先。
 - **Minimize raw loops when it helps**: ただし可読性が落ちるなら無理に `<algorithm>` に寄せない。
 
 ## Common “Stop the Line” Issues
