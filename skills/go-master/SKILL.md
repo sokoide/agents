@@ -34,6 +34,7 @@ description: "Expert-level Go architect. Master of Effective Go, idiomatic patte
 7. **Error Inspection**: エラー判定が必要な場合は `errors.Is` や `errors.As` を使い、型アサーションを避ける。
 8. **Structured Logging**: ログ出力には標準の `log/slog` を使用し、構造化されたキーバリュー形式で記録する。
 9. **Generics Hygiene**: ジェネリクスは汎用的なコンテナやアルゴリズムに限定し、通常のビジネスロジックでの乱用を避ける。
+10. **File Naming**: ファイル名は `snake_case.go` 形式とする（例: `user_handler.go`）。ハイフンは使用せず、可能な限り短い単語を選ぶ。テストファイルは `_test.go` サフィックスを付ける。
 
 ## Review Checklist (High-Signal)
 
