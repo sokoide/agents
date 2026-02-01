@@ -1,16 +1,22 @@
 ---
-name: cs-master
-description: "C# + .NET expert. Master of modern C# (10/11/12), ASP.NET Core, dependency injection, async/await, EF Core data access, testing, and production-grade review/design for backend services."
+name: csharp-master
+description: >
+    C# + .NET expert. Master of modern C# (10/11/12), ASP.NET Core, dependency
+    injection, async/await, EF Core data access, testing, and production-grade
+    review/design for backend services. Use for:
+    (1) C#/.NET implementation/review (API design, DI, exceptions, logging, observability).
+    (2) EF Core data access (N+1, transactions, connection pool, consistency).
+    (3) async/await, threads/thread pool, background processing, reliability.
+    (4) Building production-grade backend services.
 ---
 
-# C# + .NET Master
+# C# Master
 
-## When to Use
+This skill provides expert-level C# and .NET guidance for production-grade backend services.
 
-- C#（10/11/12）+ .NET（6/7/8）での実装/改善/設計レビュー
-- ASP.NET Core の API 設計、DI、例外/エラー、ログ/観測性、パフォーマンス最適化
-- EF Core を含むデータアクセス（N+1、トランザクション、コネクション枯渇、整合性）
-- async/await、スレッド/スレッドプール、バックグラウンド処理、信頼性の問題解析
+## Related Tools
+
+This skill uses: Bash (for dotnet commands), Glob, Grep, Read, Edit, Write
 
 ## First Questions (Ask Up Front)
 
@@ -22,8 +28,8 @@ description: "C# + .NET expert. Master of modern C# (10/11/12), ASP.NET Core, de
 ## Output Contract (How to Respond)
 
 - **レビュー**: 指摘を「Correctness / API / DI / Async / Data(EF) / Security / Performance / Operability」に分類し、重大度と修正方針を明示する。
-- **提案**: まず “境界” を固め（API/例外/DI/DB）、次に内部実装を段階的に改善する（最小差分）。
-- **async**: “どこで await するか / どこがブロッキングか” を必ず言語化し、リスク（deadlock/枯渇）を明示する。
+- **提案**: まず "境界" を固め（API/例外/DI/DB）、次に内部実装を段階的に改善する（最小差分）。
+- **async**: "どこで await するか / どこがブロッキングか" を必ず言語化し、リスク（deadlock/枯渇）を明示する。
 
 ## Design & Coding Rules (Expert Defaults)
 

@@ -1,15 +1,21 @@
 ---
 name: cpp-master
-description: "High-performance C++ architect. Expert in C++11/14/17/20/23, RAII, memory management, and Template Meta-programming. Use for systems programming, low-latency applications, and modernizing legacy C++ codebases."
+description: >
+    High-performance C++ architect. Expert in C++11/14/17/20/23, RAII, memory management,
+    and Template Meta-programming. Use for:
+    (1) Systems programming, low-latency applications.
+    (2) Modernizing legacy C++ codebases with modern standards.
+    (3) Implementation/refactoring/review (ownership, exception safety, low latency).
+    (4) Template/generic design (Concepts, error readability).
 ---
 
 # C++ Master
 
-## When to Use
+This skill provides expert-level C++ guidance for systems programming, low-latency applications, and modernizing legacy C++ codebases.
 
-- C++ の実装/リファクタ/設計レビュー（特に所有権、例外安全性、低レイテンシ）
-- レガシー C++（生ポインタ・手動メモリ管理・C-style API）の近代化
-- テンプレート/ジェネリック設計（Concepts、型エラーの読みやすさ改善）
+## Related Tools
+
+This skill uses: Bash (for g++/clang++/cmake commands), Glob, Grep, Read, Edit, Write
 
 ## First Questions (Ask Up Front)
 
@@ -27,9 +33,9 @@ description: "High-performance C++ architect. Expert in C++11/14/17/20/23, RAII,
 
 1. **RAII + Rule of Zero**: 所有するリソースは型で表現し、`new`/`delete` を直接書かない。
 2. **Ownership is explicit**:
-    - 単独所有: `std::unique_ptr`
-    - 共有所有: `std::shared_ptr`（必要性を説明できる場合のみ）
-    - 非所有ビュー: `T&` / `T*`（nullable を表す場合）/ `std::span` / `std::string_view`
+   - 単独所有: `std::unique_ptr`
+   - 共有所有: `std::shared_ptr`（必要性を説明できる場合のみ）
+   - 非所有ビュー: `T&` / `T*`（nullable を表す場合）/ `std::span` / `std::string_view`
 3. **Exception Safety**: 例外を使うなら保証（basic/strong/nothrow）を明示し、デストラクタで例外を投げない。必要に応じて `noexcept` を付与する。
 4. **Zero-cost abstractions**: 仮想よりテンプレート/`std::variant`/`std::function` を含めてトレードオフを評価する（可読性・バイナリサイズ・分岐予測）。
 5. **Performance hygiene**: 不要コピー/アロケを避ける（`reserve`, ムーブ、`emplace`）。ただし可読性を損なう最適化は計測後に行う。

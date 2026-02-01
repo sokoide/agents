@@ -1,15 +1,22 @@
 ---
 name: c-master
-description: "System-level C architect. Expert in C99/C11/C17/C23, manual memory management, pointer arithmetic, and low-level optimization. Use for kernel/driver development, embedded systems, and high-performance legacy codebases."
+description: >
+    System-level C architect. Expert in C99/C11/C17/C23, manual memory management,
+    pointer arithmetic, and low-level optimization. Use for:
+    (1) Kernel/driver development, embedded systems.
+    (2) High-performance legacy codebases.
+    (3) Modernizing K&R/C89-style code with safety improvements.
+    (4) C implementation/refactoring/review (memory safety, portability, system programming).
+    (5) Low-level design (embedded, kernel, driver, library).
 ---
 
 # C Master
 
-## When to Use
+This skill provides expert-level C guidance for system-level programming, memory safety, and low-level optimization.
 
-- C の実装/リファクタ/設計レビュー（特にメモリ安全性、移植性、システムプログラミング）
-- レガシー C コード（K&R や C89 スタイル）の近代化と安全性向上
-- 低レイヤー設計（組み込み、カーネル、ドライバ、ライブラリ設計）
+## Related Tools
+
+This skill uses: Bash (for gcc/clang/make/cmake commands), Glob, Grep, Read, Edit, Write
 
 ## First Questions (Ask Up Front)
 

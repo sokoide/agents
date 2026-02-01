@@ -1,15 +1,20 @@
 ---
 name: python-master
-description: "Master of Pythonic design and performance. Expert in PEP standards, type hinting, async I/O, and the modern Python ecosystem (Pydantic, Pytest, FastAPI). Use for building scalable backends, automation scripts, and high-quality library development."
+description: >
+    Master of Pythonic design and performance. Expert in PEP standards, type hinting,
+    async I/O, and the modern Python ecosystem (Pydantic, Pytest, FastAPI). Use for:
+    (1) Python implementation/improvement/review (type hints, exceptions, async, performance).
+    (2) Backend/automation/library design (public API, package boundaries).
+    (3) Modern ecosystem consultation (Pydantic/pytest/FastAPI).
 ---
 
 # Python Master
 
-## When to Use
+This skill provides expert-level Python guidance for building scalable backends, automation scripts, and high-quality library development.
 
-- Python 実装/改善/レビュー（特に型ヒント、例外設計、async I/O、性能）
-- バックエンド/自動化スクリプト/ライブラリ設計（公開 API、パッケージ境界）
-- Pydantic / pytest / FastAPI などモダンエコシステム前提の設計相談
+## Related Tools
+
+This skill uses: Bash (for python/pip/poetry/uv commands), Glob, Grep, Read, Edit, Write
 
 ## First Questions (Ask Up Front)
 

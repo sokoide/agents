@@ -1,15 +1,21 @@
 ---
 name: rust-master
-description: "High-integrity Rust architect. Master of ownership, borrowing, lifetimes, and zero-cost abstractions. Use for building memory-safe systems, high-performance web services, and reliable concurrent applications."
+description: >
+    High-integrity Rust architect. Master of ownership, borrowing, lifetimes, and zero-cost abstractions.
+    Use for:
+    (1) Rust implementation, improvement, and review (ownership, lifetimes, unsafe, concurrency, API design).
+    (2) Designing high-reliability services/tools involving async/await.
+    (3) Migration from C/C++ or refactoring requiring balance of safety and performance.
+    (4) Building memory-safe systems and reliable concurrent applications.
 ---
 
 # Rust Master
 
-## When to Use
+This skill provides expert-level Rust guidance for building memory-safe systems, high-performance web services, and reliable concurrent applications.
 
-- Rust 実装/改善/レビュー（所有権、ライフタイム、unsafe、並行性、API 設計）
-- `async`/`await` を含む高信頼サービス/ツールの設計
-- C/C++ からの移行や、安全性/性能の両立が必要なリファクタ
+## Related Tools
+
+This skill uses: Bash (for cargo/build commands), Glob, Grep, Read, Edit, Write
 
 ## First Questions (Ask Up Front)
 

@@ -1,15 +1,21 @@
 ---
 name: typescript-master
-description: "High-fidelity TypeScript architect. Expert in TS 5.x specs, structural typing, performance optimization, and runtime semantics. Use for complex type engineering, sound architecture design, and debugging deep-level type issues."
+description: >
+    High-fidelity TypeScript architect. Expert in TS 5.x specs, structural typing,
+    performance optimization, and runtime semantics. Use for:
+    (1) Complex type engineering, sound architecture design.
+    (2) Debugging deep-level type issues (conditional/mapped/variance).
+    (3) Safe boundary data handling (API/JSON/DB with type erasure awareness).
+    (4) TS implementation/improvement/review (type design, tsconfig, runtime pitfalls).
 ---
 
 # TypeScript Master
 
-## When to Use
+This skill provides expert-level TypeScript guidance for complex type engineering, sound architecture design, and debugging deep-level type issues.
 
-- TS の実装/改善/レビュー（型設計、tsconfig、ランタイムの罠、性能）
-- 高度な型（conditional/mapped/variance）や、型推論が破綻するケースのデバッグ
-- 境界データ（API/JSON/DB）を安全に扱う設計（type erasure 前提）
+## Related Tools
+
+This skill uses: Bash (for npm/yarn/pnpm/tsc commands), Glob, Grep, Read, Edit, Write
 
 ## First Questions (Ask Up Front)
 

@@ -1,16 +1,23 @@
 ---
 name: mui-master
-description: "Expert-level Material UI (MUI) architect. Master of component composition, styling (sx/styled), theme + TypeScript module augmentation, performance optimization, and Next.js (SSR/RSC) integration. Use for building scalable design systems and high-performance MUI apps."
+description: >
+    Expert-level Material UI (MUI) architect. Master of component composition, styling
+    (sx/styled), theme + TypeScript module augmentation, performance optimization, and
+    Next.js (SSR/RSC) integration. Use for:
+    (1) Building scalable design systems (Theme, TypeScript Module Augmentation).
+    (2) High-performance MUI apps.
+    (3) Advanced customization (slots, theme variants).
+    (4) Next.js integration (SSR/RSC, hydration).
+    (5) MUI component implementation/customization.
 ---
 
 # MUI Master
 
-## When to Use
+This skill provides expert-level Material UI (MUI) guidance for building scalable design systems and high-performance MUI apps.
 
-- MUI コンポーネントの実装/高度なカスタマイズ/リファクタリング（`sx`, `styled()`, `slots`/`slotProps`）
-- 企業向けデザインシステムの構築（Theme, TypeScript Module Augmentation, Design Tokens）
-- Next.js (App/Pages Router) への MUI 統合、SSR/RSC 最適化、ハイドレーションエラーの解決
-- MUI X Data Grid、フォーム、ダッシュボードのレイアウト設計と性能/アクセシビリティ改善
+## Related Tools
+
+This skill uses: Bash (for npm/yarn/pnx commands), Glob, Grep, Read, Edit, Write
 
 ## First Questions (Ask Up Front)
 
@@ -51,16 +58,12 @@ description: "Expert-level Material UI (MUI) architect. Master of component comp
 
 ```tsx
 // NG: ハードコードされた値
-<Box sx={{ padding: "16px", color: "#1976d2" }}>
-    {" "}
-    // theme を使わない Content
-</Box>;
+<Box sx={{ padding: "16px", color: "#1976d2" }}>Content</Box>;
 
 // NG: 毎レンダリングで sx object を生成
 function Component({ isActive }: Props) {
     return (
         <Button sx={{ bgcolor: isActive ? "primary.main" : "grey.500" }}>
-            // 毎回新しい object
         </Button>
     );
 }

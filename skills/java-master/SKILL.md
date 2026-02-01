@@ -1,15 +1,21 @@
 ---
 name: java-master
-description: "Java + Spring expert. Master of modern Java (11/17/21), Spring Boot, dependency injection, transactions, testing, and production-grade design/review for backend services."
+description: >
+    Java + Spring expert. Master of modern Java (11/17/21), Spring Boot, dependency
+    injection, transactions, testing, and production-grade design/review for backend
+    services. Use for:
+    (1) Spring Boot implementation/review (DI, transactions, exception design, API design).
+    (2) Performance/reliability (N+1, connection pool, threads/async, observability).
+    (3) Java + Spring Boot backend development guidance.
 ---
 
-# Java + Spring Master
+# Java Master
 
-## When to Use
+This skill provides expert-level Java and Spring Boot guidance for production-grade backend services.
 
-- Java（11/17/21 など）+ Spring Boot の実装/改善/設計レビュー
-- Spring DI、トランザクション、例外設計、API 設計、JPA/DB 境界の整理
-- パフォーマンス/信頼性（N+1、コネクション枯渇、スレッド/非同期、観測性）の問題解析
+## Related Tools
+
+This skill uses: Bash (for mvn/gradle/java commands), Glob, Grep, Read, Edit, Write
 
 ## First Questions (Ask Up Front)
 
@@ -21,7 +27,7 @@ description: "Java + Spring expert. Master of modern Java (11/17/21), Spring Boo
 ## Output Contract (How to Respond)
 
 - **レビュー**: 指摘を「Correctness / API / DI / Transactions / Data(JPA) / Security / Performance / Operability」に分類し、重大度と修正方針を明示する。
-- **提案**: “最小差分で安全に” を優先し、段階的リファクタ手順（先に境界、次に内部）を提示する。
+- **提案**: "最小差分で安全に" を優先し、段階的リファクタ手順（先に境界、次に内部）を提示する。
 - **Spring 特有**: 依存注入・Bean 境界・proxy/`@Transactional` の落とし穴は必ず言語化する。
 
 ## Design & Coding Rules (Expert Defaults)
@@ -30,7 +36,7 @@ description: "Java + Spring expert. Master of modern Java (11/17/21), Spring Boo
 2. **Layering**: Controller は I/O に専念し、Service がユースケース、Repository が永続化（ドメイン判断を DB 側に漏らさない）。
 3. **DTO vs Entity**: API DTO と JPA Entity を混在させない（Mapping を固定する）。
 4. **Transactions are explicit**: `@Transactional` の境界を明示し、read/write と propagation を意図して選ぶ。
-5. **Null is a bug source**: `Optional` は “返り値” の表現として限定的に使い、フィールドに濫用しない。
+5. **Null is a bug source**: `Optional` は "返り値" の表現として限定的に使い、フィールドに濫用しない。
 6. **Observability by default**: ログ/メトリクス/トレースの境界（外部 I/O、遅い SQL）を意識して設計する。
 7. **Modern Data Structures**: Java 14+ では DTO に `record` を使用し、不変性とボイラープレート削除を両立する。
 8. **Testing with Realism**: DB 統合テストには H2 ではなく Testcontainers を使用し、本番環境との差異を排除する。

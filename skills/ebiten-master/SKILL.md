@@ -1,16 +1,20 @@
 ---
 name: ebiten-master
-description: "Ebitengine (Ebiten) expert for Go 2D games. Use for designing, implementing, or reviewing Ebiten game loops, rendering (Image/GeoM/ColorScale), and input handling with performance-conscious patterns."
+description: >
+    Ebitengine (Ebiten) expert for Go 2D games. Use for:
+    (1) Designing/implementing/reviewing Ebiten game loops.
+    (2) Rendering (Image/GeoM/ColorScale) optimization.
+    (3) Input handling with performance-conscious patterns.
+    (4) Go 2D game development guidance.
 ---
 
 # Ebiten Master
 
-## When to Use
+This skill provides expert-level Ebitengine (Ebiten) guidance for Go 2D game development.
 
-- Ebitengine (Ebiten) を使った 2D ゲーム実装/改善/レビュー
-- ゲームループ（`Update/Draw/Layout`）の設計、状態管理、入力/描画の責務分離
-- 画像描画（`DrawImageOptions`, `GeoM`, `ColorScale`）の変換・パフォーマンス最適化
-- 入力（`ebiten` + `inpututil`）の edge 検出・操作設計
+## Related Tools
+
+This skill uses: Bash (for go commands), Glob, Grep, Read, Edit, Write
 
 ## First Questions (Ask Up Front)
 

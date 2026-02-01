@@ -1,35 +1,28 @@
 ---
 name: cleanarch-master
 description: >
-    Clean Architecture master for Go-style 4-layer architecture.
-    Enforces strict dependency rules, domain ownership of ports,
-    and clear separation between Framework and Infra Adapters.
+    Clean Architecture master for Go-style 4-layer architecture. Enforces strict
+    dependency rules, domain ownership of ports, and clear separation between Framework
+    and Infra Adapters. Use for:
+    (1) Clean Architecture design/review/refactoring in Go.
+    (2) Resolving layer boundary violations (Domain with external deps, UseCase with DB/HTTP).
+    (3) Dependency injection (Composition Root) and Port/Adapter separation.
+    (4) Enforcing 4-layer strict dependency rules.
 ---
 
-# Clean Architecture Master (4-Layer + Framework)
+# Clean Architecture Master
 
----
+This skill provides Clean Architecture (4-layer) guidance for Go applications, enforcing strict dependency rules and domain ownership of ports.
 
-This skill **strictly follows the rules defined in**
-[`references/clean-arch-4layer.md`](references/clean-arch-4layer.md).
+## Related Tools
 
-All reviews, judgments, and refactoring advice **MUST conform to that document**.
-
----
-
-## When to Use
-
-- Go を中心とした Clean Architecture（4-layer）での設計/レビュー/リファクタ
-- レイヤー境界の混線（Domain が外部依存、UseCase が DB/HTTP 直叩き等）の解消
-- 依存性注入（Composition Root）と Port/Adapter 分離の設計
-
-## Output Contract (Required)
-
-- **診断**: 依存方向違反（import/参照）・責務混入・データ境界/エラー境界の破れを列挙する。
-- **修正**: 「Port 定義 → Adapter 切り出し → Framework を薄く」の順で、最小差分の段階的手順を提示する。
-- **言い切り条件**: この skill では “好み” ではなく “規約違反” を明確に判定する（根拠は reference）。
+This skill uses: Bash (for go commands), Glob, Grep, Read, Edit, Write
 
 ## Core Philosophy
+
+This skill **strictly follows the rules defined in** [`references/clean-arch-4layer.md`](references/clean-arch-4layer.md).
+
+All reviews, judgments, and refactoring advice **MUST conform to that document**.
 
 1. **Domain-Centricity**
    ソフトウェアの価値は Domain（ビジネスルール）にある。
@@ -44,7 +37,11 @@ All reviews, judgments, and refactoring advice **MUST conform to that document**
     - **Framework Layer**（Web / gRPC / CLI）
     - **Infra Adapter Layer**（DB / 外部 API / File）
 
----
+## Output Contract (How to Respond)
+
+- **診断**: 依存方向違反（import/参照）・責務混入・データ境界/エラー境界の破れを列挙する。
+- **修正**: 「Port 定義 → Adapter 切り出し → Framework を薄く」の順で、最小差分の段階的手順を提示する。
+- **言い切り条件**: この skill では "好み" ではなく "規約違反" を明確に判定する（根拠は reference）。
 
 ## Layer Definitions (Summary)
 
@@ -76,55 +73,15 @@ All reviews, judgments, and refactoring advice **MUST conform to that document**
 - UseCase を呼び出すだけ
 - Infra Adapter の詳細を直接扱わない
 
----
-
 ## Review Checklist (Required Output)
 
-### 1. Dependency Direction
-
-- Domain が外部 package を import していないか
-- UseCase が Infra Adapter に直接依存していないか
-- Framework が Domain を直接操作していないか
-
-### 2. Responsibility Boundaries
-
-- Entity に I/O や手続きが混入していないか
-- UseCase がビジネスルールを持ちすぎていないか
-- Infra Adapter が判断ロジックを持っていないか
-
-### 3. Port Design
-
-- Repository / Gateway interface が Domain に定義されているか
-- インターフェースが SQL / HTTP などの技術詳細を漏らしていないか
-
-### 4. Error Boundary
-
-- Infra Adapter が driver error をそのまま返していないか
-- Domain / UseCase が domain error を返しているか
-- Framework が transport error（HTTP status 等）に変換しているか
-
-### 5. Data Boundary
-
-- UseCase input / output が明確に定義されているか
-- Entity が Framework DTO と混在していないか
-- Mapping の責務が一貫しているか
-
-### 6. Transaction Management (Unit of Work)
-
-- UseCase 層がトランザクション境界を制御しているか
-- `sql.Tx` などの技術詳細が Domain/UseCase に漏れていないか（Closure パターンや Context 経由での伝播を検討）
-
-### 7. Configuration Injection
-
-- 設定値（Config struct）は UseCase/Adapter に注入され、Domain は設定値を知らない状態になっているか
-
----
-
-## Refactoring Guidance
-
-- import 依存を壊さず、1 層ずつ移動する
-- まず Port を定義し、次に Infra Adapter を切り出す
-- 最後に Framework を薄くする
+- **Dependency Direction**: Domain が外部 package を import していないか、UseCase が Infra Adapter に直接依存していないか、Framework が Domain を直接操作していないか
+- **Responsibility Boundaries**: Entity に I/O や手続きが混入していないか、UseCase がビジネスルールを持ちすぎていないか、Infra Adapter が判断ロジックを持っていないか
+- **Port Design**: Repository / Gateway interface が Domain に定義されているか、インターフェースが SQL / HTTP などの技術詳細を漏らしていないか
+- **Error Boundary**: Infra Adapter が driver error をそのまま返していないか、Domain / UseCase が domain error を返しているか、Framework が transport error（HTTP status 等）に変換しているか
+- **Data Boundary**: UseCase input / output が明確に定義されているか、Entity が Framework DTO と混在していないか、Mapping の責務が一貫しているか
+- **Transaction Management**: UseCase 層がトランザクション境界を制御しているか、`sql.Tx` などの技術詳細が Domain/UseCase に漏れていないか
+- **Configuration Injection**: 設定値（Config struct）は UseCase/Adapter に注入され、Domain は設定値を知らない状態になっているか
 
 ## Common Violations (Fast Smell List)
 
@@ -133,8 +90,6 @@ All reviews, judgments, and refactoring advice **MUST conform to that document**
 - Framework が Entity を直接永続化/変換し、UseCase を迂回する
 - Infra Adapter が domain decision（ビジネス判断）を持つ
 - driver error（SQL エラー等）が境界を越えて上位に漏れる
-
----
 
 ## AI-Specific Guidelines (実装時の優先順位)
 

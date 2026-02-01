@@ -1,20 +1,24 @@
 ---
 name: bevy-master
-description: "Expert-level Bevy architect for Rust. Use for designing, implementing, or reviewing Bevy ECS apps (App/Plugins/Systems/Resources/Queries/States) with performance-conscious patterns."
+description: >
+    Expert-level Bevy architect for Rust. Use for:
+    (1) Designing/implementing/reviewing Bevy ECS apps (App/Plugins/Systems/Resources/Queries/States).
+    (2) ECS design, separation of concerns, scheduling (Startup/Update/State).
+    (3) Performance-conscious patterns (allocation/cache/query optimization) and debugging.
+    (4) Organizing assets/scenes/UI/input/rendering with 'Plugin boundaries'.
 ---
 
 # Bevy Master
 
-## When to Use
+This skill provides expert-level Bevy ECS guidance for Rust game/simulation/visualization applications.
 
-- Bevy を使ったゲーム/シミュレーション/可視化アプリの設計・実装・レビュー
-- ECS（Entities/Components/Resources/Systems）設計、責務分離、スケジューリング（`Startup`/`Update`/State）整理
-- パフォーマンス（アロケ/キャッシュ/クエリ最適化/並列実行の衝突）とデバッグ容易性の両立
-- アセット/シーン/UI/入力/レンダリング等を「プラグイン境界」で整理したいとき
+## Related Tools
+
+This skill uses: Bash (for cargo commands), Glob, Grep, Read, Edit, Write
 
 ## First Questions (Ask Up Front)
 
-- Bevy バージョン（`Cargo.lock` / `Cargo.toml` の `bevy = "..."`
+- Bevy バージョン（`Cargo.lock` / `Cargo.toml` の `bevy = "..."`）
 - ターゲット: desktop/web/mobile、要件（FPS、解像度、エンティティ数、ロード時間）
 - ゲーム構造: シーン/ステート数、主要なシステム群（入力、移動、AI、描画、UI）
 - アセット: 画像/3D/音/フォント、ロード戦略（起動時一括/遅延/ホットリロード）

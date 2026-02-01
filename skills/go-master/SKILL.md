@@ -1,15 +1,20 @@
 ---
 name: go-master
-description: "Expert-level Go architect. Master of Effective Go, idiomatic patterns, concurrency, and performance optimization. Use for writing, reviewing, or refactoring Go code to ensure production-grade quality."
+description: >
+    Expert-level Go architect. Master of Effective Go, idiomatic patterns,
+    concurrency, and performance optimization. Use for:
+    (1) Writing/reviewing/refactoring Go code (error handling, API design, concurrency, performance).
+    (2) Improving "Go-ness" (naming, package structure, interface design).
+    (3) Safety checks for goroutines/channels/context.Context usage.
 ---
 
 # Go Master
 
-## When to Use
+This skill provides expert-level Go architecture guidance for writing, reviewing, or refactoring Go code to ensure production-grade quality.
 
-- Go コードの実装/改善/レビュー（特にエラー処理、API 設計、並行処理、性能）
-- 既存コードの「Go らしさ」改善（命名、パッケージ分割、インターフェース設計）
-- ゴルーチン/チャネル/`context.Context` を使う設計の安全性チェック
+## Related Tools
+
+This skill uses: Bash (for go commands), Glob, Grep, Read, Edit, Write
 
 ## First Questions (Ask Up Front)
 
