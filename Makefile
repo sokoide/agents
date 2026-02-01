@@ -6,6 +6,8 @@ INSTALL_DIR ?= $(AGENTS_HOME)/skills
 INCLUDE_SYSTEM ?= 0
 
 # use pnpm if available, otherwise npx
+RUNNER := $(shell command -v pnpm >/dev/null 2>&1 && echo "pnpm dlx" || echo "npx")
+EXEC := $(shell command -v pnpm >/dev/null 2>&1 && echo "pnpm exec" || echo "npx")
 VALIDATOR := uv run --with PyYAML $(SKILLS_DIR)/.system/skill-creator/scripts/quick_validate.py
 
 .PHONY: list
@@ -27,8 +29,8 @@ validate:
 .PHONY: format
 format:
 	@echo "Formatting markdown files using $(RUNNER)..."
-	pnpm dlx markdownlint-cli "**/*.md" --ignore "conductor/*" --ignore "./.git/**" --ignore './.serena' --ignore './node_modules' --fix
-	pnpm textlint --fix "**/*.md"
+	$(RUNNER) markdownlint-cli "**/*.md" --ignore "conductor/*" --ignore "./.git/**" --ignore './.serena' --ignore './node_modules' --fix
+	$(EXEC) textlint --fix "**/*.md"
 
 .PHONY: install
 install:
