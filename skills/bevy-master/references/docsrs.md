@@ -2,19 +2,19 @@
 
 Source: <https://docs.rs/bevy/latest/bevy/>
 
-このファイルは、docs.rs の「高頻度で参照する型/概念」をローカルで参照できるように抜粋・要約したものです。
+This file contains excerpts and summaries of "frequently referenced types/concepts" from docs.rs for local reference.
 
 ## App / Schedules
 
-- `bevy::app::App`: アプリのエントリ。プラグイン追加、システム追加、実行を担う。
+- `bevy::app::App`: The app's entry point. Handles adding plugins, systems, and execution.
 
-App（型宣言）:
+App (Type declaration):
 
 ```rust
 pub struct App { /* private fields */ }
 ```
 
-Schedule labels（抜粋）:
+Schedule labels (Excerpts):
 
 ```rust
 pub struct Startup;
@@ -33,7 +33,7 @@ pub trait Plugin:
 }
 ```
 
-設計の主戦場は「機能ごとに Plugin 境界を作り、`build` で Resource/Systems を登録する」こと。
+The main design goal is to "create Plugin boundaries for each feature and register Resources/Systems in `build`."
 
 ## ECS: Component / Resource
 
@@ -53,13 +53,13 @@ pub trait Resource:
 
 ## Systems: Commands / Query / Res
 
-`Commands`（システム内でエンティティ作成/破棄などのコマンドを発行）:
+`Commands` (Used to issue commands like creating/destroying entities within systems):
 
 ```rust
 pub struct Commands { /* private fields */ }
 ```
 
-`Query`（ECS のデータ取得。Filter で絞り込み可能）:
+`Query` (For retrieving ECS data. Can be narrowed down with Filters):
 
 ```rust
 pub struct Query<'world, 'state, D, F = ()>
@@ -69,7 +69,7 @@ where
 { /* private fields */ }
 ```
 
-`Res` / `ResMut`（Resource の共有/可変アクセス）:
+`Res` / `ResMut` (Shared or mutable access to a Resource):
 
 ```rust
 pub struct Res<'w, T>
@@ -101,7 +101,7 @@ pub trait States:
 
 ## Minimal App Pattern (from docs.rs examples)
 
-`App::new()` から始め、プラグインとシステムを登録して `run()` する:
+Start with `App::new()`, register plugins and systems, then call `run()`:
 
 ```rust
 use bevy::prelude::*;

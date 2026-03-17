@@ -1,23 +1,23 @@
 # Advanced TypeScript Engineering
 
-## 型レベル・ロジック
+## Type-Level Logic
 
-- **`satisfies` 演算子:**
-  型を固定（Upcast）せずに、値が特定の型を満たしているか検証する。推論されたリテラル型を保持しつつ、型安全性を確保したい場合に最適。
-- **変位 (Variance):**
-  Generics における `In/Out`（反変/共変/双変/不変）を理解し、特に高階関数やクラス継承における型安全性を確保する。
-- **`const` 型パラメータ:**
-  関数に渡されたリテラルを、呼び出し側で `as const` せずに定数として推論させる。
+- **`satisfies` Operator:**
+  Validate that a value satisfies a specific type without fixing (upcasting) the type. Ideal for ensuring type safety while preserving inferred literal types.
+- **Variance:**
+  Understand `In/Out` (contravariance/covariance/bivariance/invariance) in generics, particularly to ensure type safety in higher-order functions and class inheritance.
+- **`const` Type Parameters:**
+  Allow literals passed to functions to be inferred as constants without needing `as const` on the caller side.
 
-## 構造的部分型と健全性 (Soundness)
+## Structural Typing and Soundness
 
 - **Nominal Identity (Branding):**
-  必要に応じて `Branding`（例: `type ID = string & { __brand: "User" }`）を用い、構造的に同じでも意味的に異なる型を区別し、型レベルでの誤用を防ぐ。
-- **網羅性チェック (Exhaustive Checks):**
-  `never` 型を用いた `switch` や `if` の網羅性チェックにより、将来的な型拡張時のバグをコンパイル時に検知する。
+  Use `Branding` (e.g., `type ID = string & { __brand: "User" }`) where necessary to distinguish semantically different types that are structurally identical, preventing misuse at the type level.
+- **Exhaustiveness Checks:**
+  Enforce exhaustiveness in `switch` or `if` statements using the `never` type to detect bugs during future type extensions at compile time.
 
-## 複雑な型変換
+## Complex Type Transformations
 
-- **Mapped Types:** `as` 節（Key Remapping）を用いた動的なキー変換。
-- **Conditional Types:** `infer` を駆使した型の抽出（Promise の解決型、関数の引数型など）。
-- **Template Literal Types:** 文字列のパターンマッチングと結合による型定義。
+- **Mapped Types:** Perform dynamic key transformations using `as` clauses (Key Remapping).
+- **Conditional Types:** Extract types (e.g., Promise resolution types, function argument types) using `infer`.
+- **Template Literal Types:** Define types through string pattern matching and concatenation.

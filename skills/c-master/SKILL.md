@@ -20,85 +20,85 @@ This skill uses: Bash (for gcc/clang/make/cmake commands), Glob, Grep, Read, Edi
 
 ## First Questions (Ask Up Front)
 
-- 対象規格（C99/C11/C17/C23）、コンパイラ（GCC/Clang/MSVC）、対象 OS/CPU（Embedded/POSIX/Windows）
-- 実行環境（Hosted vs Freestanding）、メモリ制約、アロケータの制限
-- エラー処理方針（返り値、errno、longjmp）、スレッド安全性要件
+- Target standards (C99/C11/C17/C23), Compiler (GCC/Clang/MSVC), Target OS/CPU (Embedded/POSIX/Windows).
+- Execution environment (Hosted vs Freestanding), memory constraints, allocator limitations.
+- Error handling policy (Return values, errno, longjmp), thread-safety requirements.
 
 ## Output Contract (How to Respond)
 
-- **レビュー**: 指摘を「Correctness / Safety(UB) / Memory / Portability / Performance / Maintainability」に分類し、重大度を明示する。
-- **修正提案**: リソース管理の方針（確保・解放の対称性）を明確にし、UB（未定義動作）を排除するコードを提案する。
-- **性能**: メモリアクセスパターンやキャッシュ効率を意識し、推測ではなく計測に基づく最適化を提案する。
+- **Review**: Classify points as "Correctness / Safety(UB) / Memory / Portability / Performance / Maintainability," and clearly state the severity.
+- **Proposed Correction**: Clarify resource management policy (symmetry of allocation and deallocation) and propose code that eliminates UB (Undefined Behavior).
+- **Performance**: Be mindful of memory access patterns and cache efficiency; propose optimizations based on measurement rather than guesswork.
 
 ## Design & Coding Rules (Expert Defaults)
 
-1. **Resource Management**: `malloc`/`free` の対を明確にする。関数内では `goto error;` パターンによる一元的なクリーンアップを推奨する。
-2. **Memory Safety**: バッファ操作には `snprintf` などの安全な関数を使用し、`strncpy` のヌル終端リスクを避ける。
-3. **Const Correctness**: ポインタ引数の不変性を `const` で明示し、API の入力/出力を厳密に区別する。
-4. **Error Handling**: 返り値によるエラー伝播を基本とする。無視されがちな返り値（`(void)` キャスト等）に注意を払う。
-5. **Data Hiding**: 必要に応じて Opaque Pointer (不透明ポインタ) を使用し、実装詳細を隠蔽して ABI 安定性を保つ。
-6. **Modern C Features**: 可能な場合、C99 の指定初期化子、`stdbool.h`、`stdint.h`、`restrict`、C11 の `_Generic` や `_Atomic` を適切に使用する。
-7. **Tooling & Sanitizers**: 可能な限り AddressSanitizer (ASan) や UndefinedBehaviorSanitizer (UBSan) を有効にして検証する。
+1. **Resource Management**: Clarify the pairs of `malloc`/`free`. Within functions, emphasize a centralized cleanup pattern using `goto error;`.
+2. **Memory Safety**: Use safe functions like `snprintf` for buffer operations and avoid the null-termination risks of `strncpy`.
+3. **Const Correctness**: Explicitly state the immutability of pointer arguments with `const`, strictly distinguishing between API inputs and outputs.
+4. **Error Handling**: Base error propagation on return values. Pay attention to frequently ignored return values (e.g., using `(void)` casts).
+5. **Data Hiding**: Use Opaque Pointers where necessary to hide implementation details and maintain ABI stability.
+6. **Modern C Features**: Appropriately use C99's designated initializers, `stdbool.h`, `stdint.h`, `restrict`, and C11's `_Generic` or `_Atomic` when possible.
+7. **Tooling & Sanitizers**: Validate using AddressSanitizer (ASan) or UndefinedBehaviorSanitizer (UBSan) whenever possible.
 
 ## Review Checklist (High-Signal)
 
-- **Undefined Behavior**: バッファオーバーフロー、整数オーバーフロー、シフト演算、未初期化変数の使用、strict-aliasing 違反
-- **Resource Leaks**: 全てのパス（特にエラーパス）でのメモリ・ファイルディスクリプタの解放漏れ
-- **Pointers**: 二重解放、Use-after-free、NULL ポインタ参照、関数ポインタの型安全性
-- **Portability**: 構造体のパディング/アライメント、エンディアン依存、`int` サイズへの依存
-- **Concurrency**: データ競合、`volatile` の誤用（同期プリミティブではない）、アトミック操作の整合性
-- **Macros**: `do { ... } while(0)` パターン、引数の括弧囲み、副作用の回避など、マクロの安全性を確認
+- **Undefined Behavior**: Buffer overflow, integer overflow, shift operations, use of uninitialized variables, strict-aliasing violations.
+- **Resource Leaks**: Leakage of memory or file descriptors in all paths, especially error paths.
+- **Pointers**: Double free, use-after-free, NULL pointer dereference, type safety of function pointers.
+- **Portability**: Struct padding/alignment, endian dependency, dependence on `int` size.
+- **Concurrency**: Data races, misuse of `volatile` (it is not a synchronization primitive), consistency of atomic operations.
+- **Macros**: Verify macro safety using patterns like `do { ... } while(0)`, parenthesizing arguments, and avoiding side effects.
 
-## Common Pitfalls (よくある間違い)
+## Common Pitfalls
 
-### ❌ 悪い例
+### ❌ Bad Examples
 
 ```c
-// NG: バッファサイズを考慮しない
+// NG: Not considering buffer size
 char buf[10];
-strcpy(buf, user_input);  // バッファオーバーフロー
+strcpy(buf, user_input);  // Buffer overflow
 
-// NG: エラーパスでリーク
+// NG: Leak in error path
 char *p = malloc(100);
-if (process(p) != 0) return -1;  // メモリリーク
+if (process(p) != 0) return -1;  // Memory leak
 free(p);
 
-// NG: 未初期化変数
+// NG: Uninitialized variable
 int result;
 if (condition) result = compute();
-return result;  // condition が false の時 UB
+return result;  // UB when condition is false
 ```
 
-### ✅ 良い例
+### ✅ Good Examples
 
 ```c
-// OK: snprintf で安全にフォーマット/コピー
+// OK: Safely format/copy with snprintf
 char buf[10];
 snprintf(buf, sizeof(buf), "%s", user_input);
 
-// OK: goto によるエラーパス一元管理
+// OK: Centralized error path management with goto
 char *p = malloc(100);
 if (p == NULL) return -1;
 int ret = process(p);
 if (ret != 0) goto cleanup;
-// ... 処理 ...
+// ... processing ...
 cleanup:
     free(p);
     return ret;
 
-// OK: 初期化を明示
+// OK: Explicit initialization
 int result = 0;
 if (condition) result = compute();
 return result;
 ```
 
-## AI-Specific Guidelines (実装時の優先順位)
+## AI-Specific Guidelines (Priorities for Implementation)
 
-1. **Safety First**: コンパイルが通るだけでは不十分。UB/リークを必ずチェックする。
-2. **Explicit is better**: 暗黙の型変換やマクロの挙動に依存せず、意図を明示する。
-3. **エラーパスを最初に**: 正常パスより先にエラー処理・クリーンアップ経路を設計する。
-4. **移植性を仮定しない**: `int` のサイズ、エンディアン、アライメント要求を環境依存と明記する。
-5. **コメント必須箇所**: `goto`、`volatile`、`restrict`、プラットフォーム分岐、手動アライメント。
+1. **Safety First**: Compiling is not enough. Always check for UB/leaks.
+2. **Explicit is Better**: State intentions clearly without depending on implicit type conversions or macro behaviors.
+3. **Error Path First**: Design the error handling and cleanup paths before the happy path.
+4. **Do Not Assume Portability**: Explicitly note dependence on environment for `int` size, endianness, and alignment requirements.
+5. **Mandatory Comment Areas**: use of `goto`, `volatile`, `restrict`, platform branching, and manual alignment.
 
 ## References
 

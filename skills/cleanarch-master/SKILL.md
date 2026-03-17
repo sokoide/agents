@@ -25,84 +25,84 @@ This skill **strictly follows the rules defined in** [`references/clean-arch-4la
 All reviews, judgments, and refactoring advice **MUST conform to that document**.
 
 1. **Domain-Centricity**
-   ソフトウェアの価値は Domain（ビジネスルール）にある。
-   DB・HTTP・Framework は交換可能な詳細である。
+   Software value lies in the Domain (business rules).
+   DB, HTTP, and Framework are interchangeable details.
 
 2. **Strict Dependency Rule**
-   依存関係は常に外側から内側へ向かう。
-   Domain は何者にも依存しない。
+   Dependencies always point from outer layers toward the inner layers.
+   The Domain depends on nothing.
 
 3. **Explicit Outer Layers**
-   外側を以下の 2 種類に分離する。
-    - **Framework Layer**（Web / gRPC / CLI）
-    - **Infra Adapter Layer**（DB / 外部 API / File）
+   Outer parts are separated into two types:
+    - **Framework Layer** (Web / gRPC / CLI)
+    - **Infra Adapter Layer** (DB / External API / Files)
 
 ## Output Contract (How to Respond)
 
-- **診断**: 依存方向違反（import/参照）・責務混入・データ境界/エラー境界の破れを列挙する。
-- **修正**: 「Port 定義 → Adapter 切り出し → Framework を薄く」の順で、最小差分の段階的手順を提示する。
-- **言い切り条件**: この skill では "好み" ではなく "規約違反" を明確に判定する（根拠は reference）。
+- **Diagnosis**: List dependency violations (imports/references), responsibility mixing, and breaches of data/error boundaries.
+- **Correction**: Propose incremental steps in the order of "Port definition → Adapter extraction → Thinning the Framework."
+- **Condition for Assertiveness**: In this skill, determine "contract violations" based on references rather than "preferences."
 
 ## Layer Definitions (Summary)
 
-> 詳細定義は **references/clean-arch-4layer.md** を正とする。
+> Refer to **references/clean-arch-4layer.md** for detailed definitions.
 
 ### Domain Layer
 
 - Entity
 - Domain Service
-- **Repository / Gateway Interface（Port）**
-- 外部ライブラリ・外部エラー型に依存しない
+- **Repository / Gateway Interface (Port)**
+- No dependencies on external libraries or external error types.
 
 ### UseCase Layer
 
-- アプリケーション固有の手順（Orchestration）
-- Domain の Port を利用する
-- 技術的詳細を知らない
+- Application-specific procedures (Orchestration).
+- Utilizes Domain Ports.
+- Agnostic of technical details.
 
 ### Infra Adapter Layer
 
-- Domain が定義した Port を具体的に実装
-- DB / 外部 API / File system 等の技術詳細を含む
-- Driver Error を Domain / UseCase 向けに変換する
+- Concrete implementation of Ports defined by the Domain.
+- Contains technical details like DB / External API / File system.
+- Converts Driver Errors into a format suitable for Domain / UseCase.
 
 ### Framework Layer
 
-- Web / gRPC / CLI / Job Runner
-- 入力変換、認証、レスポンス整形
-- UseCase を呼び出すだけ
-- Infra Adapter の詳細を直接扱わない
+- Web / gRPC / CLI / Job Runner.
+- Input conversion, authentication, response formatting.
+- Simply calls the UseCase.
+- Does not directly handle Infra Adapter details.
 
 ## Review Checklist (Required Output)
 
-- **Dependency Direction**: Domain が外部 package を import していないか、UseCase が Infra Adapter に直接依存していないか、Framework が Domain を直接操作していないか
-- **Responsibility Boundaries**: Entity に I/O や手続きが混入していないか、UseCase がビジネスルールを持ちすぎていないか、Infra Adapter が判断ロジックを持っていないか
-- **Port Design**: Repository / Gateway interface が Domain に定義されているか、インターフェースが SQL / HTTP などの技術詳細を漏らしていないか
-- **Error Boundary**: Infra Adapter が driver error をそのまま返していないか、Domain / UseCase が domain error を返しているか、Framework が transport error（HTTP status 等）に変換しているか
-- **Data Boundary**: UseCase input / output が明確に定義されているか、Entity が Framework DTO と混在していないか、Mapping の責務が一貫しているか
-- **Transaction Management**: UseCase 層がトランザクション境界を制御しているか、`sql.Tx` などの技術詳細が Domain/UseCase に漏れていないか
-- **Configuration Injection**: 設定値（Config struct）は UseCase/Adapter に注入され、Domain は設定値を知らない状態になっているか
+- **Dependency Direction**: Check if Domain imports external packages, UseCase depends directly on Infra Adapter, or Framework operates directly on the Domain.
+- **Responsibility Boundaries**: Check if Entity contains I/O or procedures, UseCase has too many business rules, or Infra Adapter has decision logic.
+- **Port Design**: Check if Repository / Gateway interfaces are defined in the Domain and if they leak technical details like SQL / HTTP.
+- **Error Boundary**: Check if Infra Adapter returns driver errors directly, if Domain / UseCase returns domain errors, and if Framework converts them into transport errors (HTTP status, etc.).
+- **Data Boundary**: Check if UseCase input / output are clearly defined, if Entity is mixed with Framework DTOs, and if Mapping responsibility is consistent.
+- **Transaction Management**: Check if the UseCase layer controls transaction boundaries and if technical details like `sql.Tx` leak into Domain / UseCase.
+- **Configuration Injection**: Check if configuration values (Config struct) are injected into UseCase / Adapter, leaving the Domain unaware of them.
 
 ## Common Violations (Fast Smell List)
 
-- Domain に `database/sql`, `net/http`, ORM/SDK の型が漏れている
-- UseCase が SQL/HTTP/ファイル I/O を直接扱う（Adapter 未分離）
-- Framework が Entity を直接永続化/変換し、UseCase を迂回する
-- Infra Adapter が domain decision（ビジネス判断）を持つ
-- driver error（SQL エラー等）が境界を越えて上位に漏れる
+- Domain leaks types like `database/sql`, `net/http`, or ORM/SDK.
+- UseCase handles SQL / HTTP / File I/O directly (Adapters not separated).
+- Framework persists/converts Entity directly, bypassing the UseCase.
+- Infra Adapter contains domain decisions (business logic).
+- Driver errors (e.g., SQL errors) leak through boundaries to upper layers.
 
-## AI-Specific Guidelines (実装時の優先順位)
+## AI-Specific Guidelines (Priorities for Implementation)
 
-1. **依存方向を最優先**: 技術的な容易さ（ライブラリの便利機能等）よりも、レイヤー境界と依存方向の遵守を優先する。
-2. **型を安易に共有しない**: レイヤーを跨ぐ際は、面倒でも DTO や Mapping を定義し、Entity が外部（Framework/Infra）の都合に染まらないようにする。
-3. **Port は Domain が定義**: 「何が必要か」を Domain が決め、「どう実現するか」を Adapter が決める。インターフェースの定義場所を間違えない。
-4. **Error は抽象化**: データベース固有のエラー（`sql.ErrNoRows` 等）を UseCase 以上に漏らさない。必ず Domain Error に変換する。
-5. **Context の伝播**: トランザクションやトレース情報の伝播に `context.Context` を正しく使い、関数のシグネチャを一貫させる。
+1. **Dependency Direction First**: Prioritize adherence to layer boundaries and dependency direction over technical ease (e.g., library convenience features).
+2. **Avoid Lazy Type Sharing**: When crossing layers, define DTOs and Mapping even if it's tedious, to ensure Entity is not tainted by external (Framework/Infra) concerns.
+3. **Domain Defines Ports**: The Domain decides "what is needed," and the Adapter decides "how to achieve it." Do not misplace interface definitions.
+4. **Abstract Errors**: Do not leak database-specific errors (e.g., `sql.ErrNoRows`) above the UseCase. Always convert them to Domain Errors.
+5. **Context Propagation**: Use `context.Context` correctly for propagating transaction or tracing information, maintaining consistent function signatures.
 
 ## Positioning
 
 - This skill enforces **architectural correctness**, not coding style.
-- Framework や ORM の流儀より **参照規約を優先**する。
+- **Prioritize reference conventions** over Framework or ORM idiomatic styles.
 
 ## References
 

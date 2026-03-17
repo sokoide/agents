@@ -2,22 +2,22 @@
 
 ## 1) Web Layer / Middleware
 
-- Controller/endpoint は薄く（入力変換、認証/認可、ユースケース呼び出し、出力整形）。
-- モデルバインディング/バリデーションの責務を境界に寄せ、内部で重複検証しない。
-- 例外はグローバルに捕捉し、一貫したエラー形式にする（スタックトレースを返さない）。
+- Controllers/endpoints should be thin (Limited to input conversion, authentication/authorization, use case calls, and output formatting).
+- Keep model binding and validation responsibilities at the boundaries; avoid redundant validation internally.
+- Capture exceptions globally to maintain consistent error formats (Do not return stack traces).
 
 ## 2) DI Lifetimes
 
-- **Singleton**: 状態を持たない/スレッドセーフのみ。`DbContext` や `HttpContext` 依存は禁止。
-- **Scoped**: リクエスト単位の依存（多くのアプリサービス、`DbContext`）。
-- **Transient**: 軽量・使い捨て。重い初期化や外部接続は避ける。
+- **Singleton**: For stateless or thread-safe components only. Dependencies like `DbContext` or `HttpContext` are prohibited.
+- **Scoped**: Per-request dependencies (Used for most application services and `DbContext`).
+- **Transient**: Lightweight and disposable. Avoid heavy initialization or external connections.
 
 ## 3) HTTP Client / Outbound Calls
 
-- `HttpClient` の寿命管理を誤らない（使い捨て/新規生成の乱用は避ける）。
-- タイムアウト/リトライ/サーキットは責務レイヤーを固定し、重複設定を避ける。
+- Manage `HttpClient` lifetime correctly (Avoid disposal/repeated instantiation).
+- Fix the responsibility layer for timeouts, retries, and circuits to avoid overlapping configurations.
 
 ## 4) Operability
 
-- 相関 ID を通し、構造化ログで検索可能にする。
-- graceful shutdown で in-flight を扱う（バックグラウンド処理も含む）。
+- Pass correlation IDs and enable searching via structured logs.
+- Handle in-flight requests (including background processes) with graceful shutdown.

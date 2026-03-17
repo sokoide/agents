@@ -1,117 +1,117 @@
-# Clean Architecture（Go-style 4-Layer）
+# Clean Architecture (Go-style 4-Layer)
 
-このドキュメントは `cleanarch-master` の **唯一の正** です。ここに反する構造は「好み」ではなく **規約違反** として扱います。
+This document is the **single source of truth** for `cleanarch-master`. Any structure that contradicts this is handled as a **contract violation**, not a "preference."
 
-## 1. Non-Negotiable Rules（絶対ルール）
+## 1. Non-Negotiable Rules
 
-- **Framework は UseCase を呼ぶだけ**（入力/認証/レスポンス整形に限定）
-- **Infra Adapter は Domain が定義した Port を実装する**（Domain/UseCase に実装を置かない）
-- **Domain は外部に一切依存しない**（DB/HTTP/ORM/SDK/Framework の型を import しない）
-- **依存方向は常に外→内**（Framework → UseCase → Domain ← Infra Adapter）
+- **Framework only calls the UseCase** (Limited to Input / Auth / Response Formatting).
+- **Infra Adapter implements Ports defined by the Domain** (No implementations in Domain or UseCase).
+- **Domain depends on nothing external** (No imports for DB / HTTP / ORM / SDK / Framework types).
+- **Dependency direction is always from Outer to Inner** (Framework → UseCase → Domain ← Infra Adapter).
 
-## 2. 各レイヤーの定義と責務
+## 2. Layer Definitions & Responsibilities
 
-### Domain（ドメイン層）
+### Domain (Domain Layer)
 
-#### Domain 定義
+#### Domain Definition
 
-ビジネスルールそのもの（交換不可能な価値）
+The business rules themselves (irreplaceable value).
 
-#### Domain 構成要素
+#### Domain Components
 
 - Entity
 - Domain Service
-- Repository / Gateway Interface（Port）
+- Repository / Gateway Interface (Port)
 
-#### Domain 責務
+#### Domain Responsibilities
 
-- ビジネスルールの定義
-- 永続化・外部連携に対する抽象契約（Port）
+- Defining business rules.
+- Abstract contract for persistence and external integration (Port).
 
-#### Domain 依存性
+#### Domain Dependencies
 
-- 外部依存ゼロ（標準ライブラリは “ドメイン表現に必要な範囲” のみ）
+- Zero external dependencies (Standard library only within the range "necessary for domain representation").
 
-### UseCase（ユースケース層）
+### UseCase (UseCase Layer)
 
-#### UseCase 定義
+#### UseCase Definition
 
-アプリケーションとしての具体的機能の手順（Orchestration）
+Procedures for specific application functions (Orchestration).
 
-#### UseCase 責務
+#### UseCase Responsibilities
 
-- Domain の操作と手順制御
-- トランザクション/リトライ等のアプリ制御（技術詳細ではなく “方針”）
-- UseCase の Input/Output（DTO）定義
+- Manipulation of the Domain and control of procedures.
+- Application control like transactions and retries ("policies" rather than technical details).
+- Defining UseCase Input/Output (DTOs).
 
-#### UseCase 依存性
+#### UseCase Dependencies
 
-- Domain のみに依存（Infra/Framework の存在を知らない）
+- Depends only on the Domain (Unaffected by Infra / Framework).
 
-### Infra Adapter（インフラアダプタ層）
+### Infra Adapter (Infra Adapter Layer)
 
-#### Infra Adapter 定義
+#### Infra Adapter Definition
 
-外部システム（DB/外部 API/File 等）との橋渡し
+Bridge to external systems (DB, external API, Files, etc.).
 
-#### Infra Adapter 責務
+#### Infra Adapter Responsibilities
 
-- Domain Port の具体実装
-- driver error を domain/usecase 向けのエラーに変換
-- 技術詳細（SQL、HTTP、SDK、シリアライザ等）を閉じ込める
+- Concrete implementation of Domain Ports.
+- Converting driver errors into domain/usecase error formats.
+- Encapsulating technical details (SQL, HTTP, SDK, serializers, etc.).
 
-#### Infra Adapter 依存性
+#### Infra Adapter Dependencies
 
-- Domain（Port/Entity/Domain Error）
-- 外部リソース（DB、HTTP、SDK、ファイル）
+- Domain (Port/Entity/Domain Error).
+- External resources (DB, HTTP, SDK, Files).
 
-### Framework（フレームワーク層）
+### Framework (Framework Layer)
 
-#### Framework 定義
+#### Framework Definition
 
-最外周の I/O 層（Web/gRPC/CLI/Job Runner）
+The outermost I/O layer (Web / gRPC / CLI / Job Runner).
 
-#### Framework 責務
+#### Framework Responsibilities
 
-- 入力変換（Request → UseCase Input）
-- 認証・認可、ルーティング
-- UseCase 呼び出し
-- 出力変換（UseCase Output → Response、HTTP status 等）
+- Input conversion (Request → UseCase Input).
+- Authentication, authorization, and routing.
+- Calling the UseCase.
+- Output conversion (UseCase Output → Response, HTTP status, etc.).
 
-#### Framework 依存性
+#### Framework Dependencies
 
-- UseCase のみに依存（Domain 直触り禁止、Infra 直触り禁止）
+- Depends only on the UseCase (No direct manipulation of Domain or Infra).
 
-## 3. Dependency Matrix（やってよい依存）
+## 3. Dependency Matrix (Permissible Dependencies)
 
-- **Domain →** 自前コード + 最小限の標準ライブラリ（例: `time`, `errors`）。`database/sql`, `net/http` など I/O 系は原則禁止。
-- **UseCase →** Domain のみ（標準ライブラリは制御に必要な最小限は可）
-- **Infra Adapter →** Domain + 外部ドライバ/SDK（ただし外へ漏らさない）
-- **Framework →** UseCase（Infra の具象に直接触れず Composition Root 経由）
+- **Domain →** Self-written code + minimal standard library (e.g., `time`, `errors`). I/O systems like `database/sql`, `net/http` are prohibited in principle.
+- **UseCase →** Domain only (Minimal control-related standard library allowed).
+- **Infra Adapter →** Domain + external drivers/SDKs (Encapsulated).
+- **Framework →** UseCase (No direct touch of Infra concrete logic; instead via Composition Root).
 
-## 4. Error 境界ルール
+## 4. Error Boundary Rules
 
-- **Infra Adapter は driver error を直接返さない**
-- **Domain/UseCase は domain/usecase error を返す**（アプリの意味を持つ）
-- **Framework が transport error に変換する**（HTTP status、gRPC status、exit code 等）
+- **Infra Adapter does not return driver errors directly.**
+- **Domain/UseCase returns domain/usecase errors** (Carrying application meaning).
+- **Framework converts them to transport errors** (HTTP status, gRPC status, exit codes, etc.).
 
-## 5. Data 境界ルール
+## 5. Data Boundary Rules
 
-- **UseCase Input/Output は明示的な構造体で定義**
-- **Entity を Framework DTO と混在させない**
-- **Mapping の責務を固定する**（Framework か UseCase のどちらかに統一）
+- **UseCase Input/Output are defined by explicit structures.**
+- **Entity is not mixed with Framework DTOs.**
+- **Responsibility for Mapping is fixed** (Unified in either Framework or UseCase).
 
-## 6. context.Context（Go）の扱い
+## 6. context.Context (Go) Handling
 
-- **役割**: キャンセル/タイムアウト/トレーシング等の横断情報
-- **原則**: UseCase/Port の入口に `context.Context` を渡してよいが、Domain の Entity/ValueObject は `context` に依存しない（必要データは引数で渡す）
+- **Role**: Cross-cutting information like cancellations, timeouts, and tracing.
+- **Rule**: `context.Context` may be passed at the entrance of UseCase/Port, but Domain's Entity/ValueObject does not depend on `context` (Pass necessary data through arguments).
 
 ## 7. DI / Composition Root
 
-- 具象の組み立ては **Main/Composition Root** に集約する（例: `cmd/<app>/main.go`）
-- Framework は Port 実装（Infra Adapter）を知らず、UseCase 越しに呼ぶ
+- Assembly of concrete instances is concentrated in **Main/Composition Root** (e.g., `cmd/<app>/main.go`).
+- Framework does not know about Port implementations (Infra Adapter); it calls them through the UseCase.
 
-## 8. 典型ディレクトリ例（Go）
+## 8. Typical Directory Layout (Go)
 
 ```text
 cmd/app/main.go                  // composition root
@@ -121,9 +121,9 @@ internal/infra/...               // db, external api, repo implementations
 internal/framework/http/...      // handlers, middleware, routing
 ```
 
-## 9. アンチパターン（即アウト）
+## 9. Anti-Patterns (Immediate Disqualification)
 
-- Domain に DB/HTTP/ORM/SDK の型が漏れる
-- UseCase が SQL/HTTP を直接叩く（Port/Adapter 未分離）
-- Framework が UseCase を迂回して Domain/Infra を直接操作する
-- Infra Adapter がビジネス判断（条件分岐の本体）を持つ
+- Domain leaks types like DB / HTTP / ORM / SDK.
+- UseCase directly performs SQL / HTTP (Missing Port/Adapter separation).
+- Framework circumvents UseCase to directly manipulate Domain / Infra.
+- Infra Adapter holds business decisions (the core logic for conditional branching).

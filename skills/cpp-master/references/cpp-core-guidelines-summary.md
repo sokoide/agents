@@ -1,28 +1,28 @@
 # C++ Core Guidelines (Local Summary)
 
-目的: 「未定義動作を避け、例外安全・資源安全・並行安全をデフォルトにする」ための実務ルール集。
+Goal: A set of practical rules to "avoid undefined behavior and make exception safety, resource safety, and concurrency safety the default."
 
 ## What to Check First (Review Priorities)
 
-- **Lifetime/Ownership**: 所有者が明確か、参照/ポインタの寿命が安全か（dangling を作っていないか）
-- **Bounds**: 配列/スライスの範囲外アクセスが起きないか（インデックス/ポインタ算術）
-- **Resource safety**: 例外や早期 return でも解放されるか（RAII）
-- **Concurrency**: データ競合・ロック順序・共有可変状態が制御されているか
+- **Lifetime/Ownership**: Is the owner clear? Are reference/pointer lifetimes safe (avoiding dangling references)?
+- **Bounds**: Is there a risk of out-of-bounds access for arrays/slices (index/pointer arithmetic)?
+- **Resource Safety**: Are resources released even upon exceptions or early returns (RAII)?
+- **Concurrency**: Are data races, lock ordering, and shared mutable states controlled?
 
 ## Defaults (Expert Baselines)
 
-- **Rule of Zero**: 自前のデストラクタ/コピー/ムーブが不要な設計を優先する。
-- **Prefer value types**: 共有所有より値/単独所有（`unique_ptr`）を優先し、共有は必要性を説明できる場合に限定。
-- **Express intent in types**: nullable を `T*` で表すなら必ず “nullable” である理由を明確にし、非 nullable は `T&` を優先。
-- **Minimize raw loops when it helps**: ただし可読性が落ちるなら無理に `<algorithm>` に寄せない。
+- **Rule of Zero**: Prioritize designs that don't require custom destructors, copies, or moves.
+- **Prefer Value Types**: Prioritize value or single ownership (`unique_ptr`) over shared ownership; limit sharing to cases where necessity can be justified.
+- **Express Intent in Types**: If representing nullability with `T*`, clarify the reason for it being "nullable"; otherwise, prioritize `T&` for non-nullables.
+- **Minimize Raw Loops When Helpful**: However, don't force everything into `<algorithm>` if it degrades readability.
 
 ## Common “Stop the Line” Issues
 
-- 参照/`string_view`/`span` の返却が寿命違反（ローカル・一時の参照）
-- move 後オブジェクトの誤用、二重解放、所有権の二重化
-- デストラクタから例外送出、例外境界の曖昧さ（basic/strong/no-throw 不明）
-- 共有可変状態を無制限に露出（`shared_ptr<T>` + `T` が可変、など）
+- Lifetime violations in returning references/`string_view`/`span` (returning local or temporary references).
+- Misuse of moved-from objects, double frees, or duplication of ownership.
+- Throwing exceptions from destructors or ambiguity in exception boundaries (Basic/Strong/No-throw unknown).
+- Unlimited exposure of shared mutable state (e.g., `shared_ptr<T>` where `T` is mutable).
 
 ## Optional Source
 
-原典参照は必要時のみ（外部リンクは本リポジトリには保持しない）。
+Refer to the original source only when necessary (external links are not maintained in this repository).

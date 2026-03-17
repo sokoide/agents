@@ -1,27 +1,29 @@
 # Enterprise Best Practices
 
-## アンチパターンと回避策
+## Anti-patterns and Workarounds
 
-- **Enum の回避:**
-  `const object` + `Union Type` を推奨。バンドルサイズの削減と Tree-shaking への親和性、および JS のセマンティクスとの整合性を優先する。
-- **非 null アサーション (`!`) の制限:**
-  可能な限り `Optional Chaining` (`?.`) か、明示的なガード節による `null` チェックを行う。
-- **`any` の原則禁止:**
-  外部データの境界など型が不明な場合は `unknown` を使用し、バリデーション（Zod 等）を経て型を確定させる。
+- **Avoid Enums:**
+  Recommend `const object` + `Union Type`. Prioritize bundle size reduction, tree-shaking friendliness, and consistency with JS semantics.
+- **Restrict Non-null Assertions (`!`):**
+  Use `Optional Chaining` (`?.`) or explicit guard clauses for `null` checks as much as possible.
+- **Prohibit `any` with rare exceptions:**
+  Use `unknown` for ambiguous data like external API responses, and solidify types after validation (e.g., Zod).
 
-## パフォーマンスと最適化
+## Performance and Optimization
 
-- **型専用インポート (`import type`):**
-  ランタイム依存関係を明確にし、ビルド時のデッドコード削除を効率化する。
-- **モジュール境界の設計:**
-  `package.json` の `exports` フィールドを意識し、内部専用の型が外部に漏洩しないようカプセル化を徹底する。
+- **Type-only Imports (`import type`):**
+  Clarify runtime dependencies and improve dead-code elimination during builds.
+- **Module Boundary Design:**
+  Be mindful of the `package.json` `exports` field and ensure encapsulation such that internal types do not leak externally.
 
-## React パターン (TS 特化)
+## React Patterns (TS-specific)
 
-- **Component Props:** インターフェースではなく型エイリアスを使用し、`Readonly` を適用することで意図しない副作用を防止。
-- **Generic Components:** 再利用性の高いコンポーネントに対して、型パラメータを適切に伝播させる設計。
+- **Component Props:** Use type aliases instead of interfaces and apply `Readonly` to prevent unintended side effects.
+- **Generic Components:** Design components with appropriate propagation of type parameters for high reusability.
 
-## ランタイム動作の考慮
+## Runtime Considerations
 
 - **ES Private (#) vs TS private:**
-  真のカプセル化が必要な場合は ES の `#` 構文を検討し、単なるアクセス制限で十分な場合は TS の `private` を使用する（パフォーマンスへの影響を考慮）。
+  Consider the ES `#` syntax when true encapsulation is required; use TS's `private` if mere access restriction is sufficient (Be mindful of the performance impact).
+- **Type Erasure:**
+  Remember that TypeScript types are stripped away during transpilation; use classes or objects if you need features that exist at runtime.

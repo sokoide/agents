@@ -18,95 +18,95 @@ This skill uses: Bash (for python/pip/poetry/uv commands), Glob, Grep, Read, Edi
 
 ## First Questions (Ask Up Front)
 
-- Python バージョン、実行形態（ライブラリ/CLI/Web）、デプロイ環境
-- 型チェック方針（mypy/pyright、strictness）、フォーマッタ/リンタ（black/ruff）
-- async の要否（I/O-bound か CPU-bound か）、並列化の手段（asyncio / multiprocessing）
+- Python version, execution form (Library/CLI/Web), deployment environment.
+- Type checking policy (mypy/pyright, strictness), formatter/linter (black/ruff).
+- Necessity of `async` (I/O-bound or CPU-bound?), means of parallelization (asyncio / multiprocessing).
 
 ## Output Contract (How to Respond)
 
-- **レビュー**: 指摘を「Correctness / Types / API / Exceptions / Async / Performance / Style」に分類して提示する。
-- **修正提案**: まず public API と型を固め、次にエラー境界と I/O 境界を整える（無駄な依存追加は避ける）。
-- **境界データ**: 外部入力（JSON/HTTP/DB）にはバリデーション戦略（Pydantic 等）を必ず示す。
+- **Review**: Classify points as "Correctness / Types / API / Exceptions / Async / Performance / Style."
+- **Proposed Correction**: First solidify the public API and types, then organize error and I/O boundaries (Avoid unnecessary dependency additions).
+- **Boundary Data**: Always provide a validation strategy (e.g., Pydantic) for external inputs (JSON/HTTP/DB).
 
 ## Design & Coding Rules (Expert Defaults)
 
-1. **Readability first**: PEP 8 + 明快な命名。トリックや過剰なメタプログラミングは避ける。
-2. **Typed public surface**: 公開関数/メソッド/モデルには型ヒントを付け、`Any` を増殖させない。
-3. **Explicit error boundaries**: 例外を握りつぶさず、ドメイン例外/インフラ例外を分離する。
-4. **Async correctness**: `async` は I/O-bound に限定し、ブロッキング I/O は executor に逃がす。
-5. **Modern Typing**: Python 3.10+ では `List`/`Dict` ではなく `list`/`dict` を、`Union` ではなく `|` を使用する。
-6. **Logging Hygiene**: `print` は禁止。標準 `logging` または `structlog` を使用し、レベルとフォーマットを管理する。
-7. **Dependency Management**: プロジェクト管理には `uv` または `poetry` を推奨し、再現性を担保する。
+1. **Readability First**: PEP 8 + clear naming. Avoid tricks or excessive metaprogramming.
+2. **Typed Public Surface**: Add type hints to public functions/methods/models and prevent the proliferation of `Any`.
+3. **Explicit Error Boundaries**: Do not swallow exceptions; separate domain exceptions from infrastructure exceptions.
+4. **Async Correctness**: Limit `async` to I/O-bound tasks and offload blocking I/O to an executor.
+5. **Modern Typing**: In Python 3.10+, use `list`/`dict` instead of `List`/`Dict`, and `|` instead of `Union`.
+6. **Logging Hygiene**: Prohibit `print`. Use the standard `logging` or `structlog`, managing levels and formats.
+7. **Dependency Management**: Recommend `uv` or `poetry` for project management to ensure reproducibility.
 
 ## Review Checklist (High-Signal)
 
-- **Types**: `Optional`/`Union` の整合、`Protocol` の適用可否、境界での `Any` 侵入
-- **Exceptions**: 例外の種類/粒度、再送出/ラップ、ユーザ向けメッセージとログの分離
-- **Resources**: `with` によるクローズ保証、ファイル/接続/ロックの解放
-- **Async**: `await` 漏れ、キャンセル伝播、ブロッキング呼び出し混入、タイムアウト
-- **Performance**: 不要な中間リスト、N+1、データ構造選択、プロファイル方針
-- **Tests**: pytest の fixture/parametrize、境界ケース、I/O のモック戦略
+- **Types**: Consistency of `Optional`/`Union`, applicability of `Protocol`, intrusion of `Any` at boundaries.
+- **Exceptions**: Exception types/granularity, re-throwing/wrapping, separation of user-facing messages from logs.
+- **Resources**: Guaranteed closing with `with`, release of files/connections/locks.
+- **Async**: Missing `await`, cancellation propagation, intrusion of blocking calls, timeouts.
+- **Performance**: Redundant intermediate lists, N+1 queries, choice of data structures, profiling strategy.
+- **Tests**: pytest fixtures/parametrize, boundary cases, mocking strategy for I/O.
 
-## Common Pitfalls (よくある間違い)
+## Common Pitfalls
 
-### ❌ 悪い例
+### ❌ Bad Examples
 
 ```python
-# NG: Any の乱用
+# NG: Overuse of Any
 from typing import Any
-def process(data: Any) -> Any:  # 型情報がない
+def process(data: Any) -> Any:  # No type information
     return data
 
-# NG: 例外を握りつぶす
+# NG: Swallowing exceptions
 try:
     risky_operation()
-except:  # すべての例外を捕捉
+except:  # Catches all exceptions
     pass
 
-# NG: async 関数で blocking I/O
+# NG: Blocking I/O in an async function
 async def fetch():
     import time
-    time.sleep(5)  # イベントループをブロック
+    time.sleep(5)  # Blocks the event loop
 
-# NG: リソースのクローズ漏れ
+# NG: Leaking resources
 f = open("file.txt")
 data = f.read()
-# クローズしていない
+# Not closed
 ```
 
-### ✅ 良い例
+### ✅ Good Examples
 
 ```python
-# OK: 具体的な型 (Modern Python)
+# OK: Specific types (Modern Python)
 def process(data: list[str]) -> dict[str, int]:
     return {s: len(s) for s in data}
 
-# OK: 例外を適切に処理
+# OK: Handle exceptions appropriately
 try:
     risky_operation()
 except ValueError as e:
     logger.error("Invalid value: %s", e)
-    raise  # 再送出
+    raise  # Re-throw
 
-# OK: async で非同期 I/O
+# OK: Asynchronous I/O with async
 import asyncio
 async def fetch():
-    await asyncio.sleep(5)  # 非同期
+    await asyncio.sleep(5)  # Asynchronous
 
-# OK: with でリソース管理
+# OK: Resource management with with
 with open("file.txt") as f:
     data = f.read()
-# 自動的にクローズ
+# Automatically closed
 ```
 
-## AI-Specific Guidelines (実装時の優先順位)
+## AI-Specific Guidelines (Priorities for Implementation)
 
-1. **型ヒントを必ず付ける**: public API には必須。`Any` は境界でのみ使用し、内部で絞り込む。
-2. **Pydantic でバリデーション**: 外部入力（JSON/API）は Pydantic で検証する。
-3. **例外は明示的に**: 握りつぶさず、ドメイン例外として定義して伝播させる。
-4. **async は I/O-bound のみ**: CPU-bound なら `ProcessPoolExecutor` を検討。
-5. **リソースは with**: ファイル、DB 接続、ロックは必ず `with` で管理する。
-6. **Modern Syntax**: 型ヒントには組み込み型 (`list`, `dict`) と `|` 演算子を優先する。
+1. **Always Provide Type Hints**: Mandatory for public APIs. Use `Any` only at boundaries and narrow down internally.
+2. **Validate with Pydantic**: Validate external inputs (JSON/API) with Pydantic.
+3. **Explicit Exceptions**: Do not swallow; define as domain exceptions and propagate.
+4. **Async for I/O-bound Only**: Consider `ProcessPoolExecutor` for CPU-bound tasks.
+5. **Resources via with**: Always manage files, DB connections, and locks with `with`.
+6. **Modern Syntax**: Prioritize built-in types (`list`, `dict`) and the `|` operator for type hints.
 
 ## Resources & Scripts
 

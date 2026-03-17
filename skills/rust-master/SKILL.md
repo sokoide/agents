@@ -19,93 +19,93 @@ This skill uses: Bash (for cargo/build commands), Glob, Grep, Read, Edit, Write
 
 ## First Questions (Ask Up Front)
 
-- Edition（2021/2024 など）と MSRV、ターゲット（std/no_std）
-- async ランタイム（Tokio 等）と I/O モデル、エラー表現方針（公開 API / 内部）
-- `unsafe` の許容範囲（ゼロ/限定/可）と性能制約（アロケ、コピー、ロック）
+- Edition (e.g., 2021/2024) and MSRV, target (std/no_std).
+- Async runtime (e.g., Tokio) and I/O model, error representation policy (Public API vs Internal).
+- Tolerance for `unsafe` (Zero / Limited / Allowed) and performance constraints (Allocation, copying, locks).
 
 ## Output Contract (How to Respond)
 
-- **レビュー**: 指摘を「Safety / Correctness / API / Async / Concurrency / Performance」に分類し、借用・所有権のモデルを図式化して説明する。
-- **修正提案**: `clone()` を増やす前に、所有権の再配置・借用の寿命短縮・型設計（newtype/enum）を優先する。
-- **unsafe**: 必要性を証明できる場合のみ。安全条件（invariant）とテスト/デバッグ手段を必ず添える。
+- **Review**: Classify points as "Safety / Correctness / API / Async / Concurrency / Performance," and provide explanations by diagramming ownership and borrowing models.
+- **Proposed Correction**: Prioritize relocating ownership, shortening borrow lifetimes, and type design (newtype/enum) before increasing `clone()` calls.
+- **unsafe**: Use only when necessity can be proven. Always include invariants (safety conditions) and methods for testing/debugging.
 
 ## Design & Coding Rules (Expert Defaults)
 
-1. **Make illegal states unrepresentable**: `enum` と型で不正状態を排除する。
-2. **No panics in libraries**: 公開 API では `unwrap/expect` を避け、`Result` で返す（アプリ境界でのみパニックを検討）。
-3. **Error boundaries**: 公開 API は安定したエラー型（`thiserror` 等）、アプリ内部は `anyhow` 等を使い分ける。
-4. **Async correctness**: `Send`/`Sync`、キャンセル、バックプレッシャ、ブロッキング呼び出し混入を常に点検する。
-5. **Observability**: async 環境では `log` ではなく `tracing` を使用し、スパンと構造化ログで文脈を追跡する。
-6. **Clippy Compliance**: `cargo clippy` に従い、警告を無視する場合は `#[allow(...)]` に理由をコメントで添える。
-7. **Typestate Pattern**: 複雑な状態遷移は、コンパイル時に順序を強制するために Typestate Pattern を検討する。
+1. **Make Illegal States Unrepresentable**: Eliminate invalid states using `enum` and types.
+2. **No Panics in Libraries**: Avoid `unwrap/expect` in public APIs; instead, return `Result` (Consider panics only at application boundaries).
+3. **Error Boundaries**: Use distinct error strategies: stable error types (e.g., `thiserror`) for public APIs and flexible ones (e.g., `anyhow`) for internal application logic.
+4. **Async Correctness**: Constantly check for `Send`/`Sync` compliance, cancellation, backpressure, and the intrusion of blocking calls.
+5. **Observability**: In async environments, use `tracing` instead of `log` to track context with spans and structured logs.
+6. **Clippy Compliance**: Adhere to `cargo clippy`; if ignoring a warning, add a comment explaining the reason with `#[allow(...)]`.
+7. **Typestate Pattern**: For complex state transitions, consider the Typestate Pattern to enforce ordering at compile time.
 
 ## Review Checklist (High-Signal)
 
-- **Ownership**: 借用範囲が最小か、参照の保持が長すぎないか、`Rc/Arc/Mutex` の乱用がないか
-- **Errors**: `Result` の型が意味を持つか、`?` の境界、`From`/`source` の連鎖
-- **Async**: `await` の並び順、`select!` のキャンセル、`spawn` の回収、ブロッキング I/O
-- **unsafe**: 境界の最小化、invariant の明文化、unsafe を隠蔽する safe wrapper
-- **Performance**: 不要 clone、アロケ、`Vec` の再確保、メモリレイアウト
-- **Tooling**: `rustfmt`/`clippy` 前提で直る指摘か、lint の抑制理由が妥当か
+- **Ownership**: Is the borrowing scope minimal? Are references held too long? Is there overuse of `Rc/Arc/Mutex`?
+- **Errors**: Does the `Result` type carry meaning? Check the boundary of `?` and chains of `From`/`source`.
+- **Async**: Order of `await`s, cancellation with `select!`, collection of `spawn` tasks, and blocking I/O.
+- **unsafe**: Boundary minimization, documentation of invariants, and safe wrappers that encapsulate unsafe code.
+- **Performance**: Redundant clones, allocations, `Vec` reallocations, and memory layout.
+- **Tooling**: Are pointers addressable via `rustfmt`/`clippy`? Is the rationale for suppressing lints valid?
 
-## Common Pitfalls (よくある間違い)
+## Common Pitfalls
 
-### ❌ 悪い例
+### ❌ Bad Examples
 
 ```rust
-// NG: 不要な clone
+// NG: Redundant clone
 fn process(data: Vec<String>) -> Vec<String> {
-    data.clone()  // 所有権があるのに clone
+    data.clone()  // Cloning despite having ownership
 }
 
-// NG: unwrap の乱用
-let value = map.get("key").unwrap();  // パニック
+// NG: Overuse of unwrap
+let value = map.get("key").unwrap();  // Panic
 
-// NG: 可変参照の重複
+// NG: Multiple mutable references
 let mut v = vec![1, 2, 3];
 let r1 = &mut v;
-let r2 = &mut v;  // コンパイルエラー
+let r2 = &mut v;  // Compile error
 
-// NG: ライフタイムの誤用
-fn longest(x: &str, y: &str) -> &str {  // コンパイルエラー
+// NG: Lifetime misuse
+fn longest(x: &str, y: &str) -> &str {  // Compile error
     if x.len() > y.len() { x } else { y }
 }
 ```
 
-### ✅ 良い例
+### ✅ Good Examples
 
 ```rust
-// OK: 所有権を移動
+// OK: Move ownership
 fn process(data: Vec<String>) -> Vec<String> {
-    data  // そのまま返す
+    data  // Return as is
 }
 
-// OK: Result/Option で安全に処理
+// OK: Handle safely with Result/Option
 let value = map.get("key").ok_or("not found")?;
 
-// OK: 借用のスコープを分ける
+// OK: Separate borrowing scopes
 let mut v = vec![1, 2, 3];
 {
     let r1 = &mut v;
     r1.push(4);
-}  // r1 のスコープ終了
+}  // r1 scope ends
 let r2 = &mut v;
 
-// OK: ライフタイムを明示
+// OK: Explicit lifetimes
 fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
     if x.len() > y.len() { x } else { y }
 }
 ```
 
-## AI-Specific Guidelines (実装時の優先順位)
+## AI-Specific Guidelines (Priorities for Implementation)
 
-1. **型で不正状態を排除**: `enum` で状態遷移を表現し、不正な組み合わせをコンパイル時に排除する。
-2. **unwrap/expect を避ける**: ライブラリでは `Result` を返し、アプリでは `?` で伝播させる。
-3. **clone は最後の手段**: 借用で解決できないか、所有権の設計を見直せないか、まず検討する。
-4. **エラー型は明示**: public API では `thiserror` で独自エラー型、内部では `anyhow` を検討。
-5. **async は Send/Sync を意識**: `!Send` なデータを `.await` を跨いで保持しない。
-6. **unsafe は最小限**: invariant をコメントで明記し、safe な wrapper で隠蔽する。
-7. **Iterators over Loops**: インデックスアクセスよりもイテレータチェーンを使用し、境界チェック回避と可読性を優先する。
+1. **Eliminate Invalid States with Types**: Represent state transitions with `enum` to exclude illegal combinations at compile time.
+2. **Avoid unwrap/expect**: Return `Result` in libraries and propagate with `?` in apps.
+3. **Clone as a Last Resort**: First consider if borrowing can solve the issue or if ownership design can be adjusted.
+4. **Explicit Error Types**: Use `thiserror` for custom error types in public APIs and `anyhow` internally.
+5. **Be Mindful of Send/Sync in Async**: Do not hold `!Send` data across `.await` points.
+6. **Minimize unsafe**: Document invariants in comments and encapsulate with safe wrappers.
+7. **Iterators over Loops**: Prioritize iterator chains over index access to favor boundary check avoidance and readability.
 
 ## Resources & Scripts
 

@@ -1,41 +1,41 @@
 # Advanced tsconfig Guide
 
-TS の型安全性と DX は `tsconfig.json` でほぼ決まります。ここでは “堅牢さ” を優先する推奨をまとめます。
+Type safety and developer experience (DX) in TypeScript are largely determined by `tsconfig.json`. This guide summarizes recommendations prioritizing "robustness."
 
-## 1) 厳格な型チェック（The Strict Standard）
+## 1) Strict Type Checking (The Strict Standard)
 
-基本は `strict: true`。
+`strict: true` should be the foundation.
 
-追加で有効化を検討するフラグ:
+Additional flags to consider:
 
-- **`noUncheckedIndexedAccess`**: `obj[key]` が `undefined` を含みうることを型で表現し、実行時の `cannot read ...` を減らす。
-- **`exactOptionalPropertyTypes`**: optional の `undefined` 代入を厳格化し、意図しない状態を防ぐ。
-- **`noImplicitReturns`**: 全分岐で戻り値があることを保証（API で特に有効）。
+- **`noUncheckedIndexedAccess`**: Represent in the type system that `obj[key]` can be `undefined`, reducing runtime `cannot read property ...` errors.
+- **`exactOptionalPropertyTypes`**: Enforce stricter assignment of `undefined` to optional properties to prevent unintended states.
+- **`noImplicitReturns`**: Ensure that all branches return a value (particularly effective for APIs).
 
-## 2) モジュール/解決（Node/バンドラ前提）
+## 2) Module Resolution (Node/Bundler Prerequisites)
 
-- **`moduleResolution: "NodeNext"`**: Node の ESM 解決に寄せる（CJS/ESM 混在プロジェクトで特に重要）。
-- **`verbatimModuleSyntax`**: import/export の意味を明確化し、出力 JS の予測可能性を上げる。
-- **`isolatedModules`**: Babel/SWC 等での単体変換を想定する場合に必須級（型に依存した変換を検知）。
+- **`moduleResolution: "NodeNext"`**: Align with Node's ESM resolution (especially critical for mixed CJS/ESM projects).
+- **`verbatimModuleSyntax`**: Clarify the semantics of imports and exports to increase the predictability of the output JS.
+- **`isolatedModules`**: Essential when assuming single-file transpilation by tools like Babel or SWC (Detects transpilation that depends on types).
 
-## 3) アプリ vs ライブラリ（公開物で分ける）
+## 3) App vs. Library (Distinguishing Public Assets)
 
-### アプリ（実行する側）
+### For Apps (The Executable Side)
 
-- `noEmit: true` を使い、型チェック専用にする（ビルドは bundler に任せる構成）。
-- `lib`/`jsx` はランタイムに合わせる（DOM/React/Node）。
+- Use `noEmit: true` for type-checking only (leaving the build to a bundler).
+- Align `lib` and `jsx` with your runtime environment (e.g., DOM, React, Node).
 
-### ライブラリ（配布する側）
+### For Libraries (The Distributable Side)
 
-- `declaration: true` と `declarationMap: true` を検討（型定義の配布とデバッグ体験）。
-- `stripInternal` や `exports` 設計と合わせ、公開型の漏れを防ぐ。
+- Consider `declaration: true` and `declarationMap: true` (Decouple type definition distribution and improve the debugging experience).
+- Combine with `stripInternal` and `exports` design to prevent the leakage of public types.
 
-## 4) ビルドパフォーマンス
+## 4) Build Performance
 
-- **`incremental: true`**: 再コンパイル短縮（`.tsbuildinfo` を生成する）。
-- **`skipLibCheck: true`**: 速度優先のトレードオフ。CI では false を検討（依存の型破綻を早期検知）。
+- **`incremental: true`**: Accelerate recompilation by generating `.tsbuildinfo`.
+- **`skipLibCheck: true`**: A trade-off prioritizing speed. Consider setting to `false` in CI to detect type breakages in dependencies early.
 
-## 5) ありがちな落とし穴
+## 5) Common Pitfalls
 
-- `types` を雑に増やすとグローバル汚染・型衝突の原因になる。
-- `paths` は便利だが、実行時解決（Node/bundler）と一致しないと壊れる。
+- Carelessly expanding `types` can cause global pollution and type collisions.
+- While `paths` are convenient, things will break if they do not match runtime resolution (Node/bundler).

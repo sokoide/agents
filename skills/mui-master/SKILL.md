@@ -21,46 +21,46 @@ This skill uses: Bash (for npm/yarn/pnx commands), Glob, Grep, Read, Edit, Write
 
 ## First Questions (Ask Up Front)
 
-- MUI バージョン (v5 / v6)、React/Next.js のバージョンとルーティング (App/Pages Router)
-- Next.js: SSR の有無、RSC 境界（`'use client'` の配置）、CSS-in-JS の注入方式
-- スタイリング方針（`sx` 優先 / `styled` 優先 / theme `variants`/`styleOverrides` 中心 / Tailwind 等と併用）
-- TypeScript の厳格度、特に Theme の拡張（Module Augmentation）の要件
-- デザイントークン（Figma 等）との同期要件や、複数テーマ（Dark/Light/Custom）の有無
+- MUI version (v5 / v6), React/Next.js version and routing (App/Pages Router).
+- Next.js: SSR availability, RSC boundaries (placement of `'use client'`), CSS-in-JS injection method.
+- Styling policy (priority on `sx` / priority on `styled` / centralized theme `variants`/`styleOverrides` / combined with Tailwind, etc.).
+- TypeScript strictness level, particularly requirements for Theme extensions (Module Augmentation).
+- Synchronization requirements with design tokens (e.g., Figma) and presence of multiple themes (Dark/Light/Custom).
 
 ## Output Contract (How to Respond)
 
-- **実装/レビュー**: 指摘を「Composition / Styling / Theme+TS / Next.js(SSR/RSC) / Performance / Accessibility」に分類し、根拠を短く添える。
-- **デザインシステム**: 個別のコンポーネントだけでなく、token→theme→component override の依存関係が追える設計を提示する。
-- **パフォーマンス**: レンダリングコストやバンドルサイズに配慮し、不要な DOM 深度・不安定な `sx`・過剰な Context 再レンダリングを避ける。
+- **Implementation/Review**: Classify points as "Composition / Styling / Theme+TS / Next.js(SSR/RSC) / Performance / Accessibility," providing brief rationale.
+- **Design System**: Present a design that tracks dependencies from token → theme → component override, rather than just individual components.
+- **Performance**: Be mindful of rendering costs and bundle sizes; avoid unnecessary DOM depth, unstable `sx` usage, and excessive Context re-renders.
 
 ## Design & Coding Rules (Expert Defaults)
 
-1. **Theme-First Approach**: ハードコードを避け、`theme.spacing/palette/typography/breakpoints` を徹底活用する。
-2. **Type-Safe Theme**: theme 拡張は Module Augmentation で型定義し、`sx` も `Theme` で型付けする。
-3. **Composition over wrappers**: まず既存コンポーネントの `slots`/`slotProps` と `component` を使い、必要なときだけ `styled()`/自作 wrapper を追加する。
-4. **Stable styling**: 頻繁に変わる値に連動する `sx`（inline object 生成含む）を抑え、`styled()` + props / CSS 変数 / theme `variants` を選ぶ。
-5. **Pigment CSS Ready**: ランタイムコスト削減のため、静的なスタイル抽出を意識し、将来的な Pigment CSS 移行に備える。
-6. **Grid v2**: レイアウトには従来の `Grid` ではなく、機能強化された `Grid2` (`@mui/material/Grid2`) を使用する。
-7. **Loading Strategy**: データ取得中は `<Skeleton />` を配置し、CLS (Cumulative Layout Shift) を防ぐ。
+1. **Theme-First Approach**: Avoid hard-coding; utilize `theme.spacing/palette/typography/breakpoints` thoroughly.
+2. **Type-Safe Theme**: Define theme extensions with Module Augmentation and type `sx` using `Theme`.
+3. **Composition Over Wrappers**: Use existing components' `slots`/`slotProps` and `component` first; add `styled()` or custom wrappers only when necessary.
+4. **Stable Styling**: Limit `sx` usage (including inline object generation) tied to frequently changing values; prefer `styled()` + props, CSS variables, or theme `variants`.
+5. **Pigment CSS Ready**: Be mindful of static style extraction to reduce runtime costs and prepare for future Pigment CSS migration.
+6. **Grid v2**: Use the enhanced `Grid2` (`@mui/material/Grid2`) for layouts instead of the traditional `Grid`.
+7. **Loading Strategy**: Place `<Skeleton />` during data fetching to prevent Cumulative Layout Shift (CLS).
 
 ## Review Checklist (High-Signal)
 
-- **Theming**: セマンティックな色/typography/spacing を無視して値が散っていないか
-- **TypeScript**: theme 拡張が型安全か、`sx` で `Theme` 前提が壊れていないか
-- **Next.js**: SSR/RSC 境界が破綻していないか、FOUC/ハイドレーション不整合の兆候がないか
-- **Efficiency**: DOM 深度が不必要に増えていないか（Box/Stack/Container の濫用）
-- **Consistency**: `sx`/`styled`/`styleOverrides`/`variants` の使い分けがチーム規約に沿っているか
-- **Accessibility**: コントラスト、`:focus-visible`、`aria-*`、ラベル/説明文、キーボード操作
+- **Theming**: Are values scattered without regard for semantic colors/typography/spacing?
+- **TypeScript**: Is theme extension type-safe? Are `Theme` assumptions in `sx` intact?
+- **Next.js**: Are SSR/RSC boundaries compromised? Any signs of FOUC (Flash of Unstyled Content) or hydration mismatches?
+- **Efficiency**: Is DOM depth unnecessarily increased (e.g., overuse of Box/Stack/Container)?
+- **Consistency**: Does the use of `sx`/`styled`/`styleOverrides`/`variants` align with team conventions?
+- **Accessibility**: Contrast, `:focus-visible`, `aria-*`, labels/descriptions, and keyboard interaction.
 
-## Common Pitfalls (よくある間違い)
+## Common Pitfalls
 
-### ❌ 悪い例
+### ❌ Bad Examples
 
 ```tsx
-// NG: ハードコードされた値
+// NG: Hard-coded values
 <Box sx={{ padding: "16px", color: "#1976d2" }}>Content</Box>;
 
-// NG: 毎レンダリングで sx object を生成
+// NG: Generating sx object on every render
 function Component({ isActive }: Props) {
     return (
         <Button sx={{ bgcolor: isActive ? "primary.main" : "grey.500" }}>
@@ -68,7 +68,7 @@ function Component({ isActive }: Props) {
     );
 }
 
-// NG: 不要な Box のネスト
+// NG: Unnecessary Box nesting
 <Box>
     <Box>
         <Box>
@@ -77,19 +77,19 @@ function Component({ isActive }: Props) {
     </Box>
 </Box>;
 
-// NG: Theme の型拡張なし
+// NG: No type extension for Theme
 const theme = createTheme({
-    custom: { brand: "#123456" }, // 型エラー無視
+    custom: { brand: "#123456" }, // Ignores type error
 });
 ```
 
-### ✅ 良い例
+### ✅ Good Examples
 
 ```tsx
-// OK: Theme を使う
+// OK: Using the Theme
 <Box sx={{ p: 2, color: "primary.main" }}>Content</Box>;
 
-// OK: styled で安定した component
+// OK: Stable component with styled
 const StyledButton = styled(Button, {
     shouldForwardProp: (prop) => prop !== "isActive",
 })<{ isActive: boolean }>(({ theme, isActive }) => ({
@@ -98,12 +98,12 @@ const StyledButton = styled(Button, {
         : theme.palette.grey[500],
 }));
 
-// OK: 適切な component 選択
+// OK: Selecting the appropriate component
 <Stack spacing={2}>
     <Typography>No unnecessary nesting</Typography>
 </Stack>;
 
-// OK: Module Augmentation で型拡張
+// OK: Type extension with Module Augmentation
 declare module "@mui/material/styles" {
     interface Theme {
         custom: {
@@ -118,18 +118,18 @@ declare module "@mui/material/styles" {
 }
 
 const theme = createTheme({
-    custom: { brand: "#123456" }, // 型安全
+    custom: { brand: "#123456" }, // Type-safe
 });
 ```
 
-## AI-Specific Guidelines (実装時の優先順位)
+## AI-Specific Guidelines (Priorities for Implementation)
 
-1. **Theme ファースト**: 色・spacing・typography はすべて theme 経由。ハードコード禁止。
-2. **型安全な Theme**: Module Augmentation で theme を拡張し、`sx` も型チェックを受ける。
-3. **Stable styling**: 動的スタイルは `styled()` + props か CSS 変数で。毎回 `sx` object 生成しない。
-4. **Component 合成**: `slots`/`slotProps` を優先。wrapper は最小限に。
-5. **Next.js 統合**: `'use client'` は最小単位に。公式の EmotionCache/StyledRegistry パターンを使う。
-6. **Use Grid2**: レイアウトには新しい `Grid2` コンポーネントを使用する。
+1. **Theme First**: All colors, spacing, and typography must go through the theme. No hard-coding.
+2. **Type-Safe Theme**: Extend the theme with Module Augmentation so `sx` remains type-checked.
+3. **Stable Styling**: Handle dynamic styles with `styled()` + props or CSS variables. Do not generate `sx` objects every time.
+4. **Component Composition**: Prioritize `slots`/`slotProps`. Keep wrappers to a minimum.
+5. **Next.js Integration**: Keep `'use client'` to a minimum. Use official EmotionCache/StyledRegistry patterns.
+6. **Use Grid2**: Use the new `Grid2` component for layouts.
 
 ## References
 

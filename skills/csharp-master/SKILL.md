@@ -20,95 +20,95 @@ This skill uses: Bash (for dotnet commands), Glob, Grep, Read, Edit, Write
 
 ## First Questions (Ask Up Front)
 
-- .NET / C# バージョン、ホスティング（K8s/IIS/VM）、ビルド/CI（dotnet/SDK）
-- Web スタック（Minimal APIs / MVC / gRPC）、認証（JWT/OIDC）、キャッシュ/メッセージングの有無
-- DB 種別、EF Core の利用範囲、トランザクション境界、マイグレーション運用
-- 非機能要件（p95/p99、スループット、タイムアウト、リトライ/冪等性、SLO）
+- .NET / C# version, Hosting (K8s/IIS/VM), Build/CI (dotnet/SDK).
+- Web stack (Minimal APIs / MVC / gRPC), Authentication (JWT/OIDC), presence of Caching/Messaging.
+- DB type, usage range of EF Core, transaction boundaries, migration management.
+- Non-functional requirements (p95/p99, throughput, timeouts, retries/idempotency, SLO).
 
 ## Output Contract (How to Respond)
 
-- **レビュー**: 指摘を「Correctness / API / DI / Async / Data(EF) / Security / Performance / Operability」に分類し、重大度と修正方針を明示する。
-- **提案**: まず "境界" を固め（API/例外/DI/DB）、次に内部実装を段階的に改善する（最小差分）。
-- **async**: "どこで await するか / どこがブロッキングか" を必ず言語化し、リスク（deadlock/枯渇）を明示する。
+- **Review**: Classify points as "Correctness / API / DI / Async / Data(EF) / Security / Performance / Operability," clearly stating the severity and correction policy.
+- **Proposal**: First solidify the "boundaries" (API/Exceptions/DI/DB), then improve internal implementations incrementally with minimal diffs.
+- **async**: Always verbalize "where to await" vs "where it blocks" and specify risks like deadlock or thread pool exhaustion.
 
 ## Design & Coding Rules (Expert Defaults)
 
-1. **Constructor injection**: 依存はコンストラクタで明示し、Service Locator を避ける。
-2. **Separation of concerns**: Web 層は I/O、Domain/Service 層はユースケース、Data 層は永続化に限定する。
-3. **DTO vs Entity**: API DTO と EF Entity を混在させない（境界で mapping）。
-4. **Async all the way**: I/O は async、同期ブロッキング（`.Result`, `.Wait()`）は禁止。
-5. **Cancellation & timeouts**: `CancellationToken` を境界から伝播し、外部 I/O にタイムアウトを設定する。
-6. **Observability by default**: 構造化ログ、相関 ID、メトリクスを前提に設計する（機微情報はログ禁止）。
-7. **Global Exception Handling**: ASP.NET Core 8+ では `IExceptionHandler` を実装し、例外処理を一元化する。
-8. **Nullable Reference Types**: `<Nullable>enable</Nullable>` を前提とし、null 警告をゼロにする。
+1. **Constructor Injection**: Explicitly state dependencies in the constructor and avoid Service Locator.
+2. **Separation of Concerns**: Limit the Web layer to I/O, the Domain/Service layer to use cases, and the Data layer to persistence.
+3. **DTO vs Entity**: Do not mix API DTOs and EF Entities; perform mapping at the boundaries.
+4. **Async All the Way**: Use async for I/O; synchronous blocking calls like `.Result` or `.Wait()` are prohibited.
+5. **Cancellation & Timeouts**: Propagate `CancellationToken` from boundaries and set timeouts for external I/O.
+6. **Observability by Default**: Design with structured logging, correlation IDs, and metrics in mind (do not log sensitive information).
+7. **Global Exception Handling**: For ASP.NET Core 8+, implement `IExceptionHandler` to centralize exception handling.
+8. **Nullable Reference Types**: Assume `<Nullable>enable</Nullable>` and aim for zero null warnings.
 
 ## Review Checklist (High-Signal)
 
-- **API**: 入力検証、エラーレスポンスの一貫性、バージョニング、破壊的変更の回避
-- **DI**: Lifetime（Singleton/Scoped/Transient）の誤り、循環依存、巨大サービス、テスト不可能な static
-- **Async**: `.Result`/`.Wait()`、不必要な `Task.Run`、スレッドプール枯渇、キャンセル無視
-- **Data / EF Core**: N+1、追跡/非追跡、クエリの肥大化、トランザクション境界、コネクション枯渇
-- **Security**: 認可境界、入力の信頼境界、シークレット/PII の漏洩、ログへの機微情報
-- **Performance**: 不要アロケ、過剰な LINQ、同期 I/O、巨大 JSON、GC 圧
-- **Operability**: タイムアウト/リトライ/冪等性、graceful shutdown、バックグラウンド処理の回収
+- **API**: Input validation, consistency of error responses, versioning, avoidance of breaking changes.
+- **DI**: Lifetime errors (Singleton/Scoped/Transient), circular dependencies, massive services, non-testable statics.
+- **Async**: `.Result`/`.Wait()`, unnecessary `Task.Run`, thread pool exhaustion, ignored cancellations.
+- **Data / EF Core**: N+1 queries, tracking/no-tracking, bloated queries, transaction boundaries, connection exhaustion.
+- **Security**: Authorization boundaries, trust boundaries for input, leakage of secrets/PII, sensitive info in logs.
+- **Performance**: Redundant allocations, excessive LINQ, synchronous I/O, massive JSON, GC pressure.
+- **Operability**: Timeout/Retry/Idempotency, graceful shutdown, proper cleanup of background processes.
 
-## Common Pitfalls (よくある間違い)
+## Common Pitfalls
 
-### ❌ 悪い例
+### ❌ Bad Examples
 
 ```csharp
-// NG: async で同期ブロッキング
+// NG: Using synchronous blocking in async
 public async Task<User> GetUserAsync(int id) {
-    return db.Users.Find(id);  // 同期メソッド
+    return db.Users.Find(id);  // Synchronous method
 }
 
-// NG: .Result でデッドロック
+// NG: Deadlock danger with .Result
 public void Process() {
-    var result = GetDataAsync().Result;  // デッドロックの危険
+    var result = GetDataAsync().Result;  // Risk of deadlock
 }
 
-// NG: EF Core で N+1
+// NG: N+1 with EF Core
 foreach (var user in users) {
     var orders = db.Orders.Where(o => o.UserId == user.Id).ToList();  // N+1
 }
 
-// NG: DI lifetime の誤り
-services.AddSingleton<DbContext>();  // DbContext は Scoped であるべき
+// NG: Incorrect DI lifetime
+services.AddSingleton<DbContext>();  // DbContext should be Scoped
 ```
 
-### ✅ 良い例
+### ✅ Good Examples
 
 ```csharp
-// OK: async を一貫して使用
+// OK: Consistent use of async
 public async Task<User> GetUserAsync(int id, CancellationToken ct) {
     return await db.Users.FindAsync(id, ct);
 }
 
-// OK: await を使う
+// OK: Use await
 public async Task ProcessAsync() {
     var result = await GetDataAsync();
 }
 
-// OK: Include で一括取得
+// OK: Batch fetch with Include
 var users = await db.Users
     .Include(u => u.Orders)
     .ToListAsync(ct);
 
-// OK: 適切な DI lifetime
+// OK: Appropriate DI lifetime
 services.AddScoped<DbContext>();
 services.AddScoped<IUserService, UserService>();
 ```
 
-## AI-Specific Guidelines (実装時の優先順位)
+## AI-Specific Guidelines (Priorities for Implementation)
 
-1. **async all the way**: I/O は必ず async、`.Result`/`.Wait()` は絶対に使わない。
-2. **CancellationToken を伝播**: すべての async メソッドで `CancellationToken` を受け取り、外部 I/O に渡す。
-3. **DI lifetime を正しく**: DbContext は Scoped、ステートレスサービスは Scoped か Transient、キャッシュは Singleton。
-4. **EF Core は Include で**: N+1 を避けるため、必要なナビゲーションプロパティは明示的に Include する。
-5. **DTO と Entity を分離**: API DTO と EF Entity を混在させず、境界で mapping する（AutoMapper や Mapster）。
-6. **構造化ログ**: `ILogger<T>` で構造化ログ、機微情報は絶対にログに出さない。
-7. **Resilience**: HTTP リクエストや DB 接続には `Microsoft.Extensions.Http.Resilience` (Polly) でリトライポリシーを適用する。
-8. **LINQ Hygiene**: 遅延評価を意識し、多重列挙を避けるため適切なタイミングで `.ToListAsync()` する。
+1. **Async All the Way**: Always use async for I/O; never use `.Result`/`.Wait()`.
+2. **Propagate CancellationToken**: Receive `CancellationToken` in all async methods and pass it to external I/O.
+3. **Correct DI Lifetime**: DbContext should be Scoped, stateless services should be Scoped or Transient, and cache should be Singleton.
+4. **EF Core via Include**: Explicitly use Include for necessary navigation properties to avoid N+1.
+5. **Separate DTOs and Entities**: Do not mix API DTOs and EF Entities; map them at boundaries (using AutoMapper or Mapster).
+6. **Structured Logging**: Use `ILogger<T>` for structured logs; never output sensitive info to logs.
+7. **Resilience**: Apply retry policies with `Microsoft.Extensions.Http.Resilience` (Polly) for HTTP requests and DB connections.
+8. **LINQ Hygiene**: Be mindful of deferred execution and use `.ToListAsync()` at appropriate times to avoid multiple enumerations.
 
 ## Resources & Scripts
 

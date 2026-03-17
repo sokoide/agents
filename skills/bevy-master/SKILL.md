@@ -18,63 +18,63 @@ This skill uses: Bash (for cargo commands), Glob, Grep, Read, Edit, Write
 
 ## First Questions (Ask Up Front)
 
-- Bevy バージョン（`Cargo.lock` / `Cargo.toml` の `bevy = "..."`）
-- ターゲット: desktop/web/mobile、要件（FPS、解像度、エンティティ数、ロード時間）
-- ゲーム構造: シーン/ステート数、主要なシステム群（入力、移動、AI、描画、UI）
-- アセット: 画像/3D/音/フォント、ロード戦略（起動時一括/遅延/ホットリロード）
-- 並列実行: システムの依存関係（順序、排他アクセス）、スケジュール分割の意図
+- Bevy version (Check `bevy = "..."` in `Cargo.lock` / `Cargo.toml`).
+- Target: desktop/web/mobile, Requirements (FPS, resolution, number of entities, load time).
+- Game structure: Scenes/States, main system groups (Inpuy, Movement, AI, Rendering, UI).
+- Assets: Image/3D/Sound/Font, loading strategy (Batch at startup / Lazy / Hot reload).
+- Parallel execution: System dependencies (Order, exclusive access), intention behind schedule splitting.
 
 ## Output Contract (How to Respond)
 
-- **レビュー**: 指摘を「ECS Model / Scheduling / Resources & Events / Assets / Performance / Style」に分類し、docs.rs の API（`App`, `Plugin`, `Commands`, `Query`, `Res`, `States` など）に基づいて根拠を短く添える。
-- **修正提案**: まず境界（Plugin/Module/State）とデータ設計（Component/Resource/Event）を整え、次にクエリ/システムの衝突とホットパスを最小差分で直す。
-- **実装**: Bevy の慣習（`Startup` で初期化、`Update` で進行、入力 → ゲームロジック → 描画/反映の順序）に沿って、テスト可能な単位に分割する。
+- **Review**: Classify points as "ECS Model / Scheduling / Resources & Events / Assets / Performance / Style," and provide brief rationale based on docs.rs API (`App`, `Plugin`, `Commands`, `Query`, `Res`, `States`, etc.).
+- **Proposed Correction**: First, organize boundaries (Plugin/Module/State) and data design (Component/Resource/Event), then fix query/system conflicts and hot paths with minimal diffs.
+- **Implementation**: Follow Bevy conventions (`Startup` for initialization, `Update` for progression, Order: Input → Game Logic → Rendering/Reflection) and split into testable units.
 
 ## Design & Coding Rules (Expert Defaults)
 
-1. **Plugin で境界を切る**: 機能（player/ui/combat/levels 等）を `Plugin::build(&self, app: &mut App)` に閉じる。
-2. **System の引数で依存を宣言**: `Commands`, `Res/ResMut`, `Query` をシグネチャで表し、グローバル状態/隠れ依存を避ける。
-3. **Hot path を静かにする**: `Update` 内での文字列生成、重いログ、アセットロード、過剰な `Query` 反復を避ける。
-4. **クエリ衝突は設計で解く**: 同一データへの `&mut` 競合を減らす（責務分割、Resource へ集約、イベント駆動、順序制約の明示）。
-5. **State で制御フローを整理**: メニュー/ゲーム中/ポーズなどを `States` で表し、不要なシステムは該当 State だけ動かす。
-6. **初期化は Startup に寄せる**: エンティティ生成や Resource 初期化は `Startup`（または専用 state の entry）へ寄せ、`Update` を純粋に保つ。
+1. **Enforce Boundaries with Plugins**: Encapsulate features (player/ui/combat/levels etc.) within `Plugin::build(&self, app: &mut App)`.
+2. **Declare Dependencies in System Signatures**: Represent `Commands`, `Res/ResMut`, and `Query` in the signature to avoid global state/hidden dependencies.
+3. **Keep the Hot Path Quiet**: Avoid string generation, heavy logging, asset loading, or excessive `Query` iterations within `Update`.
+4. **Resolve Query Conflicts via Design**: Reduce `&mut` contention for the same data (responsibility splitting, aggregation to Resources, event-driven, explicit ordering).
+5. **Organize Flow with States**: Represent Menu / In-game / Pause etc. using `States`, running necessary systems only in the appropriate State.
+6. **Centralize Initialization in Startup**: Perform entity spawning or Resource initialization in `Startup` (or entry of a dedicated state) to keep `Update` pure.
 
 ## Review Checklist (High-Signal)
 
-- **App 構成**: `DefaultPlugins` の採用/差し替えが意図通りか、プラグイン順序は妥当か
-- **ECS 設計**: Component 粒度、Resource の使い分け、データが「所有される場所」が明確か
-- **Scheduling**: `Startup`/`Update`/State の切り分け、順序制約の必要性、並列実行の競合
-- **Commands/Spawning**: spawn/despawn の責務、親子関係/シーンのライフサイクルが破綻していないか
-- **Queries**: フィルタ/分割、`&mut` の範囲、反復コスト、毎フレームの無駄な探索
-- **Assets**: ロード/キャッシュ、ハンドルの保持、遅延ロード時のフォールバック
+- **App Configuration**: Check if use/replacement of `DefaultPlugins` is intentional and if plugin order is appropriate.
+- **ECS Design**: Check Component granularity, appropriate use of Resources, and clarity of data "ownership."
+- **Scheduling**: Check segregation of `Startup`/`Update`/State, need for order constraints, and parallel execution conflicts.
+- **Commands/Spawning**: Check spawn/despawn responsibilities and integrity of Parent-Child relationships / Scene lifecycle.
+- **Queries**: Check filtering/splitting, `&mut` scope, iteration cost, and redundant searches per frame.
+- **Assets**: Check loading/caching, handle retention, and fallback during lazy loading.
 
-## Common Pitfalls (よくある間違い)
+## Common Pitfalls
 
-### ❌ 悪い例
+### ❌ Bad Examples
 
 ```rust
-// NG: Update で毎フレーム spawn
+// NG: Spawning every frame in Update
 fn spawn_bullets(mut commands: Commands) {
-    commands.spawn(BulletBundle::default());  // 際限なく増える
+    commands.spawn(BulletBundle::default());  // Increases indefinitely
 }
 
-// NG: Query で &mut の競合
+// NG: &mut Conflict in Query
 fn system1(mut query: Query<&mut Transform, With<Player>>) { /* ... */ }
 fn system2(mut query: Query<&mut Transform, With<Player>>) { /* ... */ }
-// 両方を同時実行すると競合エラー
+// Running both simultaneously causes a conflict error
 
-// NG: System で重い処理
+// NG: Heavy computation in a System
 fn update(query: Query<&Position>) {
     for pos in query.iter() {
-        expensive_calculation(pos);  // 毎フレーム heavy
+        expensive_calculation(pos);  // Heavy every frame
     }
 }
 ```
 
-### ✅ 良い例
+### ✅ Good Examples
 
 ```rust
-// OK: Event + 条件で spawn
+// OK: Spawning based on Event + Condition
 fn spawn_on_event(
     mut commands: Commands,
     mut events: EventReader<ShootEvent>,
@@ -84,27 +84,27 @@ fn spawn_on_event(
     }
 }
 
-// OK: Query を分割、または順序制約
+// OK: Splitting Query or Order Constraints
 fn system1(mut query: Query<&mut Transform, (With<Player>, Without<Enemy>)>) { }
 fn system2(mut query: Query<&mut Transform, With<Enemy>>) { }
-// Or: .before(system2) で順序制御
+// Or: Control order with .before(system2)
 
-// OK: 計算結果をキャッシュ、または非同期タスクへ
+// OK: Cache computation result or move to Async Task
 fn update(
     query: Query<(&Position, &mut CachedResult), Changed<Position>>,
 ) {
-    // Changed でフィルタして必要な時だけ計算
+    // Filter with Changed and calculate only when necessary
 }
 ```
 
-## AI-Specific Guidelines (実装時の優先順位)
+## AI-Specific Guidelines (Priorities for Implementation)
 
-1. **Plugin で機能を隔離**: 各機能（player, enemy, ui など）を独立した Plugin に分け、`app.add_plugins()` で組み立てる。
-2. **System の依存は明示**: 順序が重要なら `.before()` / `.after()` で明記。暗黙の依存を作らない。
-3. **Query は最小限に**: `With/Without` でフィルタし、不要な Entity を走査しない。
-4. **Component は小さく**: 巨大な Component より、複数の小さい Component で組み合わせる。
-5. **State で制御**: メニュー/ゲーム中/ポーズなどを `States` で表現し、不要なシステムは該当 State でのみ実行。
-6. **Startup で初期化**: エンティティ生成や Resource 初期化は `Startup` に集約し、`Update` を純粋に保つ。
+1. **Isolate Features with Plugins**: Separate each feature (player, enemy, ui, etc.) into an independent Plugin and assemble them with `app.add_plugins()`.
+2. **Explicit System Dependencies**: For important ordering, specify with `.before()` / `.after()`. Avoid implicit dependencies.
+3. **Minimize Queries**: Use `With/Without` filters to avoid scanning unnecessary Entities.
+4. **Small Components**: Prefer combining multiple small Components over using a single massive Component.
+5. **Control with States**: Represent Menu / In-game / Pause etc. with `States` and execute systems only in the appropriate State.
+6. **Initialize in Startup**: Aggregate entity spawning and Resource initialization in `Startup` to keep `Update` pure.
 
 ## References
 

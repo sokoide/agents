@@ -19,89 +19,86 @@ This skill uses: Bash (for npm/yarn/pnpm/tsc commands), Glob, Grep, Read, Edit, 
 
 ## First Questions (Ask Up Front)
 
-- TS/Node のバージョン、実行環境（Node/Browser/React）、module 形式（ESM/CJS）
-- `tsconfig` の strictness、lint（ESLint）/format（Prettier）、型チェックを CI で走らせるか
-- 外部入力の検証方針（Zod 等）とエラー表現（Result/throw）
+- TS/Node version, execution environment (Node/Browser/React), module format (ESM/CJS).
+- `tsconfig` strictness, linting (ESLint)/formatting (Prettier), and whether type checks run in CI.
+- Validation policy for external inputs (e.g., Zod) and error representation (Result/throw).
 
 ## Output Contract (How to Respond)
 
-- **レビュー**: 指摘を「Soundness / Runtime / API / Performance / DX」に分類し、`any`/アサーション/非 null の妥当性を最優先で評価する。
-- **修正提案**: まず型の境界（外部入力・module exports）を固め、次に内部の型推論/表現を簡潔にする。
-- **ランタイム**: 生成 JS の挙動が変わる提案は、必ず具体例とリスク（互換性/バンドル）を添える。
+- **Review**: Classify points as "Soundness / Runtime / API / Performance / DX," prioritizing evaluations of `any`, assertions, and non-nullability.
+- **Proposed Correction**: First solidify type boundaries (external inputs, module exports), then simplify internal type inference and representation.
+- **Runtime**: For proposals that change the behavior of generated JS, always include specific examples and risks (compatibility/bundling).
 
 ## Design & Coding Rules (Expert Defaults)
 
-1. **No `any` by default**: 不明な値は `unknown` とし、ガード/バリデーションで絞り込む。
-2. **Prefer narrowing over assertions**: `as` は最後の手段。`satisfies`/ユーザ定義型ガードを優先する。
-3. **Type erasure awareness**: 型は消える。境界ではランタイム検証（Zod 等）を前提にする。
-4. **Export surface discipline**: 公開型を安定させ、内部型が漏れないよう module 境界を設計する。
-5. **Prefer Union over Enum**: TypeScript 独自の `enum` は避け、Union Type と `as const` オブジェクトを使用する。
-6. **Monorepo Strategy**: 大規模プロジェクトでは Project References (`tsc --build`) を活用し、ビルド時間を短縮する。
+1. **No `any` by default**: Treat unknown values as `unknown` and narrow them down using guards or validation.
+2. **Prefer Narrowing Over Assertions**: Use `as` only as a last resort; prioritize `satisfies` and user-defined type guards.
+3. **Type Erasure Awareness**: Remember that types disappear at runtime. Assume runtime validation (e.g., Zod) at boundaries.
+4. **Export Surface Discipline**: Stabilize public types and design module boundaries to prevent internal types from leaking.
+5. **Prefer Union Over Enum**: Avoid TypeScript-specific `enum`s; use Union types with `as const` objects instead.
+6. **Monorepo Strategy**: In large-scale projects, leverage Project References (`tsc --build`) to shorten build times.
 
 ## Review Checklist (High-Signal)
 
-- **Soundness**: `any`、過剰な `as`、`!`、`// @ts-ignore` の乱用と局所化
-- **Runtime boundary**: 外部入力の検証、例外/Result の境界、JSON の型安全性
-- **Types**: 条件付き型の複雑化、推論の破綻、`never` の意図しない発生
-- **Config**: `strict` 系、`noUncheckedIndexedAccess` 等の採用可否、`skipLibCheck` の影響
-- **Performance**: 型計算コスト（IDE 遅延）、ビルド時間、バンドルサイズ（type-only import）
+- **Soundness**: Misuse or localization of `any`, excessive `as`, `!`, and `// @ts-ignore`.
+- **Runtime Boundary**: Validation of external inputs, exception/Result boundaries, and JSON type safety.
+- **Types**: Complexity of conditional types, breakdown of inference, and unintended emergence of `never`.
+- **Config**: Adoption of `strict` mode, `noUncheckedIndexedAccess`, etc., and the impact of `skipLibCheck`.
+- **Performance**: Type calculation costs (IDE lag), build times, and bundle sizes (use type-only imports).
 
-## Common Pitfalls (よくある間違い)
+## Common Pitfalls
 
-### ❌ 悪い例
+### ❌ Bad Examples
 
 ```typescript
-// NG: any の乱用
+// NG: Overuse of any
 function process(data: any): any {
-    // 型安全性ゼロ
-    return data.whatever; // ランタイムエラー
+    // Zero type safety
+    return data.whatever; // Potential runtime error
 }
 
-// NG: アサーションの乱用
-const value = data as string; // 検証なし
+// NG: Overuse of assertions
+const value = data as string; // No validation
 
-// NG: ! で null を単純に無視
-const user = users.find((u) => u.id === id)!; // undefined の可能性
-
-// NG: 外部 JSON を検証なしで使用
-const config: Config = JSON.parse(text); // 実際の形式不明
+// NG: Ignoring null with !
+const user = users.find((u) => u.id === id)!; // Possible undefined
 ```
 
-### ✅ 良い例
+### ✅ Good Examples
 
 ```typescript
-// OK: unknown を使って型ガード
+// OK: Narrowing with unknown and type guards
 function process(data: unknown): string {
     if (typeof data === 'string') {
-        return data;  // 型が絞り込まれた
+        return data;  // Type is narrowed
     }
     throw new Error('Invalid data');
 }
 
-// OK: 型ガードで安全に検証
+// OK: Safe validation with type guards
 function isString(value: unknown): value is string {
     return typeof value === 'string';
 }
 
-// OK: Optional chaining と nullish coalescing
+// OK: Optional chaining and nullish coalescing
 const user = users.find(u => u.id === id);
 const name = user?.name ?? 'Unknown';
 
-// OK: Zod でランタイム検証
+// OK: Runtime validation with Zod
 import { z } from 'zod';
 const ConfigSchema = z.object({ ... });
 const config = ConfigSchema.parse(JSON.parse(text));
 ```
 
-## AI-Specific Guidelines (実装時の優先順位)
+## AI-Specific Guidelines (Priorities for Implementation)
 
-1. **any 禁止、unknown 使用**: 不明な値は `unknown` とし、型ガードで絞り込む。
-2. **ランタイム検証を必須に**: 外部入力（API/JSON）は Zod や io-ts で検証する。
-3. **as より satisfies**: 型アサーションを減らし、`satisfies` で型推論を保つ。
-4. **strict を有効化**: `tsconfig.json` で `strict: true` を設定する。
-5. **公開型を安定化**: module 境界で内部型が漏れないよう設計する。
-6. **type-only import**: 型だけの import は `import type` で明示し、バンドルサイズを減らす。
-7. **Const Assertions**: リテラル型推論には `as const` を活用し、`enum` よりもオブジェクトマップを優先する。
+1. **Prohibit any, use unknown**: Treat mystery values as `unknown` and narrow them with type guards.
+2. **Mandatory Runtime Validation**: Validate external inputs (API/JSON) using Zod or io-ts.
+3. **satisfies Over as**: Minimize type assertions and maintain type inference with `satisfies`.
+4. **Enable strict**: Set `strict: true` in `tsconfig.json`.
+5. **Stabilize Public Types**: Design boundaries to prevent internal types from leaking out of modules.
+6. **Type-only Imports**: Explicitly use `import type` for type-only imports to reduce bundle size.
+7. **Const Assertions**: Leverage `as const` for literal type inference and prioritize object maps over `enum`s.
 
 ## Resources & Scripts
 

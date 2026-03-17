@@ -1,67 +1,67 @@
-# Effective Go: 主要なイディオムと規約（完全版）
+# Effective Go: Key Idioms and Conventions (Complete Version)
 
-## 1. フォーマットとコメント
+## 1. Formatting and Comments
 
-* **`gofmt`**: 自動整形は必須。スタイル論争を排除する。
-* **セミコロン**: 行末に自動挿入されるため、開始ブレース `{` を次の行に置いてはならない。
-* **ドキュメントコメント**: すべての公開シンボルにはコメントを付与。コメントは対象の名前で始め、完全な一文にする（例: `// Compile parses a regular expression...`）。
-* **パッケージコメント**: `package` 文の直前に置き、パッケージ全体の概要を説明する。
+* **`gofmt`**: Automatic formatting is mandatory. It eliminates style debates.
+* **Semicolons**: Since they are automatically inserted at end-of-lines, do not place the opening brace `{` on the next line.
+* **Doc Comments**: Add comments to all exported symbols. Comments should start with the name of the subject and form a complete sentence (e.g., `// Compile parses a regular expression...`).
+* **Package Comments**: Place immediately before the `package` statement to provide an overview of the entire package.
 
-## 2. 名前付け規約
+## 2. Naming Conventions
 
-* **パッケージ名**: 小文字 1 単語。インポート時に `search.String` のように自然に読める名前を選ぶ。
-* **Getter/Setter**: Getter に `Get` は不要（`Owner()`）。Setter は `SetOwner()`。
-* **インターフェース名**: メソッド名に `-er` を付ける（`Reader`, `Writer`, `Formatter`）。
-* **MixedCaps**: アンダースコアは使わず、`MixedCaps`（公開）または `mixedCaps`（非公開）を使用。
+* **Package Names**: Use a single lowercase word. Choose names that read naturally when imported, such as `search.String`.
+* **Getters/Setters**: Do not use `Get` in Getters (`Owner()`, not `GetOwner()`). Setters are named `SetOwner()`.
+* **Interface Names**: Add an `-er` suffix to the method name (e.g., `Reader`, `Writer`, `Formatter`).
+* **MixedCaps**: Use `MixedCaps` (exported) or `mixedCaps` (unexported) instead of underscores.
 
-## 3. 制御構造
+## 3. Control Structures
 
-* **`if`**: 初期化ステートメント（`if err := ...; err != nil`）を積極的に利用し、変数のスコープを限定する。
-* **早期リターン**: 正常系をインデントさせず、エラー系で先に `return` する。
-* **`switch`**: `fallthrough` は自動で行われない。カンマ区切りで複数ケースを記述可能。
-* **Type Switch**: `switch x := y.(type)` で型の判別とキャストを同時に行う。
+* **`if`**: Actively use initialization statements (`if err := ...; err != nil`) to limit variable scope.
+* **Early Return**: Do not indent the happy path; `return` early for error paths.
+* **`switch`**: `fallthrough` is not automatic. Multiple cases can be listed separated by commas.
+* **Type Switch**: Use `switch x := y.(type)` to perform type discrimination and casting simultaneously.
 
-## 4. 関数とメソッド
+## 4. Functions and Methods
 
-* **多値戻り値**: 成功値と `error`（または `ok bool`）を返すのが標準。
-* **名前付き戻り値**: ドキュメントとしての役割を果たす。特に戻り値が多い場合に有効。
-* **`defer`**: 関数終了時に実行。LIFO（後入れ先出し）順で実行される。引数は `defer` 実行時に評価される。
-* **レシーバの選択**:
-  * `*T` (ポインタ): メソッド内で値を変更する場合、または構造体が大きい場合。
-  * `T` (値): 基本的に不変な小さいデータ。迷ったらポインタレシーバを選択するのが無難。
+* **Multiple Return Values**: Returning a success value and an `error` (or `ok bool`) is standard.
+* **Named Return Values**: Act as documentation. Particularly effective when there are many return values.
+* **`defer`**: Executes upon function exit. Runs in LIFO (Last-In-First-Out) order. Arguments are evaluated when `defer` is executed.
+* **Receiver Choice**:
+  * `*T` (Pointer): Use when modifying the value within the method or if the struct is large.
+  * `T` (Value): Basically for small immutable data. When in doubt, choosing a pointer receiver is a safe default.
 
-## 5. データ構造
+## 5. Data Structures
 
-* **`new`**: ゼロ初期化されたメモリへのポインタ `*T` を返す。「ゼロ値」がそのまま使える設計（例: `sync.Mutex`）を推奨。
-* **コンポジットリテラル**: `field: value` 形式で構造体やマップを簡潔に初期化。
-* **`make`**: スライス、マップ、チャネル専用。内部構造を初期化し、即時利用可能な状態にする。
-* **配列 vs スライス**: 配列は値渡し（コピーされる）。通常は参照のように振る舞うスライスを使用する。
-* **`append`**: スライスの容量を超えるとメモリが再割り当てされるため、常に `s = append(s, ...)` のように戻り値を代入する。
+* **`new`**: Returns a pointer `*T` to zero-initialized memory. Encourage designs where the "zero value" is usable (e.g., `sync.Mutex`).
+* **Composite Literals**: Succinctly initialize structs or maps using the `field: value` format.
+* **`make`**: Exclusive to slices, maps, and channels. Initializes internal structures and makes them ready for immediate use.
+* **Arrays vs Slices**: Arrays are passed by value (copied). Typically use slices, which behave like references.
+* **`append`**: Memory is reallocated when slice capacity is exceeded, so always assign the return value like `s = append(s, ...)`.
 
-## 6. インターフェースと型
+## 6. Interfaces and Types
 
-* **インターフェースの変換**: `str, ok := value.(string)` (Type Assertion) で安全に型を確認。
-* **汎用性**: メソッドセットがインターフェースを満たしていれば、明示的な宣言なしにその型として扱える（Duck Typing）。
+* **Interface Conversion**: Safely check types with `str, ok := value.(string)` (Type Assertion).
+* **Generality**: If a method set satisfies an interface, it can be treated as that type without explicit declaration (Duck Typing).
 
-## 7. 空白識別子 (`_`)
+## 7. Blank Identifier (`_`)
 
-* **未使用インポート/変数**: 一時的なデバッグ時に使用。永続的なコードには残さない。
-* **副作用のためのインポート**: `import _ "net/http/pprof"` のように、`init` 関数のみを実行させる。
-* **インターフェースの検証**: `var _ json.Marshaler = (*RawMessage)(nil)` のように、型がインターフェースを実装しているかコンパイル時にチェックする。
+* **Unused Imports/Variables**: Use during temporary debugging. Do not leave in persistent code.
+* **Import for Side Effects**: Use `import _ "net/http/pprof"` to execute only the `init` function.
+* **Interface Verification**: Check if a type implements an interface at compile-time, such as `var _ json.Marshaler = (*RawMessage)(nil)`.
 
-## 8. 埋め込み (Embedding)
+## 8. Embedding
 
-* **構造体の埋め込み**: 継承ではなく合成（Composition）。埋め込まれた型のメソッドは「昇格（Promoted）」され、外側の型から直接呼べる。
-* **インターフェースの埋め込み**: 複数のインターフェースを組み合わせて新しいインターフェースを定義する。
+* **Struct Embedding**: Composition rather than inheritance. Methods of the embedded type are "promoted" and can be called directly from the outer type.
+* **Interface Embedding**: Define a new interface by combining multiple interfaces.
 
-## 9. 並行性 (Concurrency)
+## 9. Concurrency
 
-* **Share by communicating**: メモリを共有して通信するのではなく、通信（チャネル）によってメモリを共有する。
-* **ゴルーチン**: `go f()` で開始。同一アドレス空間で実行される軽量なスレッド。
-* **チャネル**: データの受け渡しと同期を同時に行う。バッファなしチャネルは「同期的な」やり取り。
+* **Share by Communicating**: Do not communicate by sharing memory; instead, share memory by communicating (via channels).
+* **Goroutines**: Started with `go f()`. Lightweight threads executed in the same address space.
+* **Channels**: Handle both data passing and synchronization. Unbuffered channels represent "synchronous" interaction.
 
-## 10. エラー処理、Panic、Recover
+## 10. Error Handling, Panic, and Recover
 
-* **Error**: `error` インターフェースを実装した値を返すのが基本。
-* **Panic**: 回復不能な致命的エラー（ライブラリの初期化失敗など）にのみ使用。通常のフロー制御には使わない。
-* **Recover**: `defer` 内でのみ有効。`panic` をキャッチしてプログラムの停止を防ぐ。ライブラリ境界などで慎重に使用する。
+* **Error**: Fundamentally return values that implement the `error` interface.
+* **Panic**: Use only for unrecoverable fatal errors (e.g., library initialization failure). Do not use for normal flow control.
+* **Recover**: Only effective within `defer`. Catches a `panic` to prevent program termination. Use cautiously at library boundaries.

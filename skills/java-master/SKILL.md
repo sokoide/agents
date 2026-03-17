@@ -19,100 +19,100 @@ This skill uses: Bash (for mvn/gradle/java commands), Glob, Grep, Read, Edit, Wr
 
 ## First Questions (Ask Up Front)
 
-- Java / Spring Boot / Spring Framework のバージョン、ビルド（Maven/Gradle）、実行環境（K8s/VM）
-- 主要技術（Spring MVC/WebFlux、Spring Data JPA/Jdbc、Security、Messaging）
-- 失敗時要件（リトライ/冪等性/タイムアウト/整合性）、SLO（p95/p99、スループット）
-- データモデル（RDB/NoSQL）、トランザクション境界（分散の有無）、マイグレーション運用
+- Java / Spring Boot / Spring Framework version, Build (Maven/Gradle), Execution Environment (K8s/VM).
+- Primary technologies (Spring MVC/WebFlux, Spring Data JPA/Jdbc, Security, Messaging).
+- Failure requirements (Retries/Idempotency/Timeouts/Consistency), SLO (p95/p99, Throughput).
+- Data model (RDB/NoSQL), Transaction boundaries (Distributed or not), Migration management.
 
 ## Output Contract (How to Respond)
 
-- **レビュー**: 指摘を「Correctness / API / DI / Transactions / Data(JPA) / Security / Performance / Operability」に分類し、重大度と修正方針を明示する。
-- **提案**: "最小差分で安全に" を優先し、段階的リファクタ手順（先に境界、次に内部）を提示する。
-- **Spring 特有**: 依存注入・Bean 境界・proxy/`@Transactional` の落とし穴は必ず言語化する。
+- **Review**: Classify points as "Correctness / API / DI / Transactions / Data(JPA) / Security / Performance / Operability," clearly stating the severity and correction policy.
+- **Proposal**: Prioritize "safe, minimal diffs" and provide incremental refactoring steps (Boundaries first, then internal).
+- **Spring-Specific**: Always verbalize pitfalls related to Dependency Injection, Bean boundaries, and Proxy/`@Transactional`.
 
 ## Design & Coding Rules (Expert Defaults)
 
-1. **Constructor Injection**: フィールド注入は避け、依存はコンストラクタで明示する。
-2. **Layering**: Controller は I/O に専念し、Service がユースケース、Repository が永続化（ドメイン判断を DB 側に漏らさない）。
-3. **DTO vs Entity**: API DTO と JPA Entity を混在させない（Mapping を固定する）。
-4. **Transactions are explicit**: `@Transactional` の境界を明示し、read/write と propagation を意図して選ぶ。
-5. **Null is a bug source**: `Optional` は "返り値" の表現として限定的に使い、フィールドに濫用しない。
-6. **Observability by default**: ログ/メトリクス/トレースの境界（外部 I/O、遅い SQL）を意識して設計する。
-7. **Modern Data Structures**: Java 14+ では DTO に `record` を使用し、不変性とボイラープレート削除を両立する。
-8. **Testing with Realism**: DB 統合テストには H2 ではなく Testcontainers を使用し、本番環境との差異を排除する。
+1. **Constructor Injection**: Avoid field injection and explicitly state dependencies in the constructor.
+2. **Layering**: Controllers focus on I/O, Services on use cases, and Repositories on persistence (Do not leak domain decisions to the DB side).
+3. **DTO vs Entity**: Do not mix API DTOs and JPA Entities; fix mapping responsibilities.
+4. **Transactions are Explicit**: Specify `@Transactional` boundaries and intentionally choose read/write and propagation settings.
+5. **Null is a Bug Source**: Use `Optional` only for "return values" and do not overuse it as fields.
+6. **Observability by Default**: Design with boundaries (External I/O, slow SQL) in mind for logs, metrics, and traces.
+7. **Modern Data Structures**: For Java 14+, use `record` for DTOs to achieve both immutability and elimination of boilerplate.
+8. **Testing with Realism**: Use Testcontainers instead of H2 for DB integration tests to eliminate differences from production environments.
 
 ## Review Checklist (High-Signal)
 
-- **DI/Beans**: 循環依存、scope の誤り、Bean 境界の肥大化、テスト困難な static/Singleton
-- **Transactions**: proxy を跨がない自己呼び出し、`readOnly` の意図、長時間 TX、ロールバック条件
-- **Data/JPA**: N+1、fetch 戦略、lazy 初期化例外、ページング+join、コネクション枯渇
-- **API**: バリデーション（`@Valid`）、エラー応答（`@ControllerAdvice`）、互換性（破壊的変更）
-- **Security**: 認可境界、入力の信頼境界、シークレット取り扱い、ログへの機微情報混入
-- **Performance**: 不要なオブジェクト生成、過剰な同期、ブロッキング I/O の混入（特に WebFlux）
-- **Operability**: タイムアウト、リトライ方針、サーキット/バックプレッシャ、shutdown/graceful
+- **DI/Beans**: Circular dependencies, incorrect scope, bloated Bean boundaries, non-testable static/Singleton.
+- **Transactions**: Self-calls bypassing proxies, `readOnly` intent, long-running transactions, rollback conditions.
+- **Data/JPA**: N+1 queries, fetch strategies, lazy initialization exceptions, paging with joins, connection exhaustion.
+- **API**: Validation (`@Valid`), error responses (`@ControllerAdvice`), compatibility (avoiding breaking changes).
+- **Security**: Authorization boundaries, trust boundaries for input, secret handling, sensitive info in logs.
+- **Performance**: Redundant object creation, excessive synchronization, mixing in blocking I/O (especially in WebFlux).
+- **Operability**: Timeouts, retry policies, circuits/backpressure, graceful shutdown.
 
-## Common Pitfalls (よくある間違い)
+## Common Pitfalls
 
-### ❌ 悪い例
+### ❌ Bad Examples
 
 ```java
-// NG: フィールド注入
+// NG: Field injection
 @Autowired
-private UserService userService;  // テスト困難
+private UserService userService;  // Difficult to test
 
-// NG: @Transactional の自己呼び出し
+// NG: Self-calling @Transactional
 @Transactional
 public void outer() {
-    inner();  // トランザクションが効かない
+    inner();  // Transaction does not take effect
 }
 private void inner() { ... }
 
-// NG: JPA での N+1
+// NG: N+1 in JPA
 List<User> users = userRepository.findAll();
 for (User user : users) {
-    user.getOrders().size();  // 遅延ロードで N+1
+    user.getOrders().size();  // N+1 due to lazy loading
 }
 
-// NG: Optional の誤用
+// NG: Misuse of Optional
 public Optional<User> getUser(Long id) {
-    return Optional.of(userRepository.findById(id).orElse(null));  // null を包む
+    return Optional.of(userRepository.findById(id).orElse(null));  // Wrapping null
 }
 ```
 
-### ✅ 良い例
+### ✅ Good Examples
 
 ```java
-// OK: コンストラクタ注入
+// OK: Constructor injection
 private final UserService userService;
 public UserController(UserService userService) {
     this.userService = userService;
 }
 
-// OK: 別クラスに分離してトランザクション適用
+// OK: Apply transaction by separating into another class
 @Transactional
 public void outer() {
-    anotherService.inner();  // proxy を経由
+    anotherService.inner();  // Via proxy
 }
 
-// OK: fetch join で一括取得
+// OK: Batch fetch with fetch join
 @Query("SELECT u FROM User u LEFT JOIN FETCH u.orders")
 List<User> findAllWithOrders();
 
-// OK: Optional は返り値でのみ使用
+// OK: Use Optional only for return values
 public Optional<User> getUser(Long id) {
     return userRepository.findById(id);
 }
 ```
 
-## AI-Specific Guidelines (実装時の優先順位)
+## AI-Specific Guidelines (Priorities for Implementation)
 
-1. **コンストラクタ注入**: フィールド注入を避け、依存をコンストラクタで明示する。final にする。
-2. **@Transactional の境界**: Service 層で適用し、proxy を意識する。自己呼び出しは効かない。
-3. **JPA は fetch join**: N+1 を避けるため、必要な関連を `JOIN FETCH` で一括取得する。
-4. **DTO と Entity を分離**: Controller では DTO、永続化層では Entity、境界で mapping する。
-5. **Optional は返り値のみ**: フィールドや引数には使わない。null の方が自然な場面では null を使う。
-6. **ログと例外**: `@ControllerAdvice` で例外を一元処理し、機微情報はログに出さない。
-7. **Resilience**: 外部通信には Resilience4j を適用し、リトライやサーキットブレーカーを実装する。
+1. **Constructor Injection**: Avoid field injection, explicitly state dependencies in the constructor, and make them final.
+2. **@Transactional Boundaries**: Apply in the Service layer and be mindful of proxies. Self-calls do not work.
+3. **JPA via Fetch Join**: Use `JOIN FETCH` to gather necessary associations in a single query and avoid N+1.
+4. **Separate DTOs and Entities**: Use DTOs in the Controller and Entities in the persistence layer, mapping at the boundary.
+5. **Optional Only for Returns**: Do not use in fields or arguments. Use null where it is more natural.
+6. **Logging and Exceptions**: Handle exceptions centrally with `@ControllerAdvice` and keep sensitive information out of logs.
+7. **Resilience**: Apply Resilience4j for external communications, implementing retries and circuit breakers.
 
 ## Resources & Scripts
 

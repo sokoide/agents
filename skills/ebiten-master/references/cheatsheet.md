@@ -2,7 +2,7 @@
 
 Source: <https://ebitengine.org/en/documents/cheatsheet.html>
 
-このファイルは、上記 cheatsheet の「必要最小限の API 断片」をローカル参照できるように抜粋したものです。
+This file contains excerpts of "essential API fragments" from the above cheatsheet for local reference.
 
 ## Game Loop
 
@@ -34,11 +34,11 @@ type Game interface {
 func RunGame(game Game) error
 ```
 
-`RunGame` は以下のケースで `error` を返します。
+`RunGame` returns an `error` in the following cases:
 
-- OpenGL error が起きたとき
-- audio error が起きたとき
-- `game.Update` が `error` を返したとき（同じ error が返る）
+- When an OpenGL error occurs.
+- When an audio error occurs.
+- When `game.Update` returns an `error` (the same error is returned).
 
 ## Graphics
 
@@ -122,7 +122,7 @@ func IsKeyPressed(key Key) bool
 func IsKeyJustPressed(key ebiten.Key) bool
 ```
 
-`ebiten.Key` の定数（`KeyA`, `KeyArrowLeft`, `KeySpace` など）は cheatsheet を参照。
+Refer to the cheatsheet for `ebiten.Key` constants (e.g., `KeyA`, `KeyArrowLeft`, `KeySpace`).
 
 ### Mouse
 

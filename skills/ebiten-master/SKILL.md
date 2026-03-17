@@ -18,79 +18,79 @@ This skill uses: Bash (for go commands), Glob, Grep, Read, Edit, Write
 
 ## First Questions (Ask Up Front)
 
-- Ebitengine バージョン（例: `github.com/hajimehoshi/ebiten/v2` のタグ）、Go バージョン、ターゲット（desktop/web/mobile）
-- 画面仕様: 論理解像度（`Layout` の戻り値）、ウィンドウサイズ/フルスクリーン、スケーリング方針（pixel-perfect/伸縮）
-- アセット: 画像読み込み方法、スプライトシート有無、フォント/音（要否）
-- 入力要件: キー/マウス/ゲームパッド、連射/トグル/長押し判定、リバインド要否
-- 性能要件: FPS 目標、解像度、同時スプライト数、GC 許容量
+- Ebitengine version (e.g., tag of `github.com/hajimehoshi/ebiten/v2`), Go version, Target (desktop/web/mobile).
+- Screen specifications: Logical resolution (`Layout` return value), window size / full screen, scaling policy (pixel-perfect / stretched).
+- Assets: Image loading method, presence of sprite sheets, Fonts/Audio (if needed).
+- Input requirements: Key/Mouse/Gamepad, rapid-fire / toggle / long-press detection, rebind requirements.
+- Performance requirements: Target FPS, resolution, number of simultaneous sprites, GC tolerance.
 
 ## Output Contract (How to Respond)
 
-- **設計/レビュー**: 指摘を「Game Loop / Rendering / Input / Assets / Performance / Style」に分類し、Ebitengine の API 仕様（cheatsheet）と Go の慣習に基づいて短く根拠を添える。
-- **修正提案**: まず責務分離（状態・シーン・リソース管理）と割り当て削減（毎フレームの生成/デコード排除）を優先し、次に座標系/変換/入力のバグを最小差分で直す。
-- **コード例**: `Update/Draw/Layout` の最小実装を前提に、必要箇所だけ差分で提示する（不要なフレームワーク化はしない）。
+- **Design/Review**: Classify points as "Game Loop / Rendering / Input / Assets / Performance / Style," providing brief rationale based on Ebitengine API specs (cheatsheet) and Go conventions.
+- **Proposed Correction**: Prioritize separation of concerns (state, scene, resource management) and allocation reduction (eliminating per-frame generation/decoding); then fix bugs in coordinate systems, transformations, or input with minimal diffs.
+- **Code Examples**: Provide diffs for necessary parts assuming a minimal implementation of `Update/Draw/Layout` (Avoid unnecessary framework-building).
 
 ## Design & Coding Rules (Expert Defaults)
 
-1. **Update は論理、Draw は描画**: `Update` にレンダリングを混ぜない。`Draw` は状態を変更しない（副作用最小）。
-2. **Layout で論理解像度を決める**: 論理座標系（ゲーム内座標）と外側サイズ（ウィンドウ/デバイス）を混同しない。
-3. **毎フレーム allocate しない**: `DrawImageOptions` / `GeoM` / `ColorScale` の作成や `image.Decode` をループ内でしない。再利用・キャッシュする。
-4. **変換順序を明示**: `GeoM.Translate/Scale/Rotate` の順序で結果が変わる。回転中心/拡大中心は「原点移動 → 回転/拡大 → 戻す」で表現する。
-5. **入力は edge を使う**: トグル/単発アクションは `inpututil.IsKeyJustPressed` / `inpututil.IsMouseButtonJustPressed` を使い、押しっぱなしは `ebiten.IsKeyPressed`。
-6. **画像は \*ebiten.Image を所有する**: `SubImage` は `image.Image` を返すので、必要なら `*ebiten.Image` へ変換/管理（スプライトシートの切り出しは一度だけ）。
-7. **TPS/FPS Control**: 物理演算は TPS (default 60) に依存させ、`ebiten.SetWindowResizingMode` でリサイズ挙動を制御する。
-8. **Audio Context**: `audio.Context` はシングルトンとして管理し、初期化コストとリソースリークを防ぐ。
+1. **Update for Logic, Draw for Rendering**: Do not mix rendering into `Update`. `Draw` should not change state (minimal side effects).
+2. **Determine Logical Resolution in Layout**: Do not confuse logical coordinate systems (in-game coordinates) with external sizes (window/device).
+3. **Do Not Allocate Every Frame**: Avoid creating `DrawImageOptions` / `GeoM` / `ColorScale` or calling `image.Decode` within loops. Reuse or cache them.
+4. **Explicit Transformation Order**: The result changes based on the order of `GeoM.Translate/Scale/Rotate`. Represent rotation/scaling centers as "Move to origin → Rotate/Scale → Move back."
+5. **Use Input Edges**: For toggles or single actions, use `inpututil.IsKeyJustPressed` / `inpututil.IsMouseButtonJustPressed`; use `ebiten.IsKeyPressed` for continuous holding.
+6. **Own *ebiten.Image for Images**: Since `SubImage` returns `image.Image`, convert/manage it as `*ebiten.Image` if necessary (Extract sprite sheets only once).
+7. **TPS/FPS Control**: Rely on TPS (default 60) for physics calculations and control resize behavior with `ebiten.SetWindowResizingMode`.
+8. **Audio Context**: Manage `audio.Context` as a singleton to avoid initialization costs and resource leaks.
 
 ## Review Checklist (High-Signal)
 
-- **Game Loop**: `Update` の tick 前提（1/60s）で状態更新できているか、`Update` の `error` 伝播が適切か
-- **Layout/Scaling**: 論理解像度固定 or 外側に合わせる設計が明確か、座標変換/マウス座標の扱いが一致しているか
-- **Rendering**: `DrawImage` の option 再利用、`FilterNearest/FilterLinear` の選択、`Clear/Fill` の使い方
-- **Transforms**: `GeoM` の順序、回転中心、スケール、整数座標へのスナップ（pixel art のブレ対策）
-- **Input**: edge 判定の誤用（毎フレーム反応してしまう）、同時押し、UI/ゲーム入力の優先順位
-- **Performance/GC**: ホットパスの `fmt`/`ebitenutil.DebugPrint` 多用、画像生成/コピー、`SubImage` の多重生成、オブジェクトプール/スライス再利用
+- **Game Loop**: Is state updated based on the tick (1/60s)? Is `Update`'s `error` propagation appropriate?
+- **Layout/Scaling**: Is the design for fixed logical resolution or matching the exterior clear? Do coordinate transformations and mouse coordinates align?
+- **Rendering**: Reuse of `DrawImage` options, choice of `FilterNearest/FilterLinear`, and usage of `Clear/Fill`.
+- **Transforms**: `GeoM` order, rotation center, scale, and snapping to integer coordinates (to prevent jitter in pixel art).
+- **Input**: Misuse of edge detection (triggering every frame), simultaneous presses, and priority of UI vs Game input.
+- **Performance/GC**: Excessive use of `fmt` or `ebitenutil.DebugPrint` in hot paths, image generation/copying, redundant `SubImage` generation, and reuse of object pools/slices.
 
-## Common Pitfalls (よくある間違い)
+## Common Pitfalls
 
-### ❌ 悪い例
+### ❌ Bad Examples
 
 ```go
-// NG: Update で描画
+// NG: Drawing in Update
 func (g *Game) Update() error {
-    screen.DrawImage(sprite, nil)  // Update は状態変更のみ
+    screen.DrawImage(sprite, nil)  // Update is only for state changes
     return nil
 }
 
-// NG: 毎フレーム DrawImageOptions を生成
+// NG: Generating DrawImageOptions every frame
 func (g *Game) Draw(screen *ebiten.Image) {
     for _, obj := range g.objects {
-        op := &ebiten.DrawImageOptions{}  // GC 圧
+        op := &ebiten.DrawImageOptions{}  // GC pressure
         op.GeoM.Translate(obj.X, obj.Y)
         screen.DrawImage(obj.Image, op)
     }
 }
 
-// NG: 押しっぱなしで連続発火
+// NG: Continuous trigger while holding
 func (g *Game) Update() error {
     if ebiten.IsKeyPressed(ebiten.KeySpace) {
-        g.Shoot()  // 毎フレーム発射
+        g.Shoot()  // Fires every frame
     }
     return nil
 }
 ```
 
-### ✅ 良い例
+### ✅ Good Examples
 
 ```go
-// OK: Update は状態のみ
+// OK: Update only for state
 func (g *Game) Update() error {
     g.player.X += g.velocity
     return nil
 }
 
-// OK: DrawImageOptions を再利用
+// OK: Reuse DrawImageOptions
 type Game struct {
-    drawOp ebiten.DrawImageOptions  // フィールドで再利用
+    drawOp ebiten.DrawImageOptions  // Reused in a field
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
@@ -101,24 +101,24 @@ func (g *Game) Draw(screen *ebiten.Image) {
     }
 }
 
-// OK: JustPressed で単発検出
+// OK: Detect single press with JustPressed
 func (g *Game) Update() error {
     if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
-        g.Shoot()  // 押した瞬間だけ
+        g.Shoot()  // Only when first pressed
     }
     return nil
 }
 ```
 
-## AI-Specific Guidelines (実装時の優先順位)
+## AI-Specific Guidelines (Priorities for Implementation)
 
-1. **Update/Draw を厳格に分離**: `Update` で状態変更、`Draw` で描画のみ。混ぜない。
-2. **Layout で論理解像度を返す**: ゲーム内座標系とウィンドウサイズを分離し、一貫性を保つ。
-3. **毎フレーム allocate 禁止**: `DrawImageOptions`, `GeoM`, `ColorScale` は再利用する。
-4. **入力は edge 検出**: トグル/単発は `inpututil.IsKeyJustPressed`、ホールドは `ebiten.IsKeyPressed`。
-5. **GeoM の順序を意識**: 変換の順序（translate/rotate/scale）で結果が変わる。コメントで意図を明記。
-6. **画像は一度だけロード**: スプライトシートの切り出しは初期化時に行い、`SubImage` を毎フレーム生成しない。
-7. **Shader Utilization**: 複雑なピクセル操作は CPU ではなく Kage (Shading Language) にオフロードする。
+1. **Strict Separation of Update/Draw**: State changes in `Update`, rendering only in `Draw`. Do not mix.
+2. **Return Logical Resolution in Layout**: Separate in-game coordinates from window size and maintain consistency.
+3. **Prohibit Per-Frame Allocation**: Reuse `DrawImageOptions`, `GeoM`, and `ColorScale`.
+4. **Use Edge Detection for Input**: `inpututil.IsKeyJustPressed` for toggles/single shots, `ebiten.IsKeyPressed` for holds.
+5. **Be Mindful of GeoM Order**: The result changes based on the order of transformations (translate/rotate/scale); document intent in comments.
+6. **Load Images Only Once**: Extract sprite sheets during initialization; do not generate `SubImage` every frame.
+7. **Shader Utilization**: Offload complex pixel operations to Kage (Shading Language) instead of the CPU.
 
 ## References
 
