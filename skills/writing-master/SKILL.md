@@ -1,7 +1,7 @@
 ---
-name: editor
+name: writing-master
 description: >
-    Editor and Proofreader to brush up documents. Analyzes texts created by users—including
+    Writing Master and Proofreader to brush up documents. Analyzes texts created by users—including
     essays, fiction, business documents, and letters—providing polite and detailed
     sentence-by-sentence feedback on grammar, spelling, expression, tone, and structure.
     Use for:
@@ -12,7 +12,7 @@ description: >
     (5) Final proofreading and text polishing.
 ---
 
-# Editor
+# Writing Master
 
 This skill provides expert editing and proofreading guidance to elevate writing quality while respecting the author's intent and voice.
 
