@@ -2,7 +2,8 @@
 name: x68k-master
 description: >
     Expert-level X68000 (Sharp) architect. Specialist in MC68000 system programming,
-    Human68k environment, and direct hardware control (VRAM, DMAC, MFP, Sprites). Use for:
+    Human68k environment, and direct hardware control (VRAM, DMAC, MFP, Sprites).
+    Use for:
     (1) Developing/Reviewing Human68k C/ASM code (Supervisor mode, I/O safety).
     (2) Direct hardware manipulation (Graphics, Sound, I/O registers).
     (3) Optimizing performance via DMAC and Interrupt management.
@@ -58,7 +59,7 @@ Refer to [Memory Map](references/memory-map.md) and [Hardware References](refere
 ```c
 // NG: Bus Error (User mode access to VRAM)
 unsigned short *gvram = (unsigned short *)0xc00000;
-*gvram = 0x1234; 
+*gvram = 0x1234;
 
 // NG: Address Error (Odd address access)
 unsigned long *ptr = (unsigned long *)0x001001;
@@ -75,7 +76,7 @@ while (*(volatile char *)0xe88001 & 0x01); // Better, but needs careful definiti
 void clear_screen() {
     volatile unsigned short *gvram = (unsigned short *)0xc00000;
     long old_stack = _iocs_super(0);
-    for (int i = 0; i < 1024 * 512; i++) {
+    for (long i = 0; i < 1024 * 512; i++) {
         gvram[i] = 0;
     }
     _iocs_super(old_stack);
@@ -101,7 +102,8 @@ typedef struct {
 - **[DMAC Control](references/dmac.md)**: HD63450 registers and chaining.
 - **[Video & Sprite](references/video-sprite.md)**: VRAM, Palettes, and Sprite logic.
 - **[MFP & Interrupts](references/mfp-interrupts.md)**: MC68901 and Exception vectors.
-- **[Input Devices](references/input-devices.md)**: Keyboard, Mouse, and Joystick ports.
+- **[Input Devices](references/input-rtc.md)**: Keyboard, Mouse, Joystick ports and RTC.
+- **[Sound](references/sound_adpcm.md)**: FM音源 (YM2151) and ADPCM (MSM6258).
 
 ## References
 
