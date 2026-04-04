@@ -11,102 +11,105 @@ description: >
 
 # X68000 Master
 
-This skill provides expert-level X68000 architecture guidance for writing, reviewing, or refactoring code targeting the Sharp X68000 platform, ensuring hardware safety and performance.
+Inside X68000 を正として、X68000 実機向けコードの設計・実装・レビューを行うための skill。
+特に 68000 のアドレス整列、Human68k/IOCS、VRAM、DMAC、割り込み、周辺 I/O を安全側で扱う。
 
-## Related Tools
+## 最初に確認すること
 
-This skill uses: C (gcc/XC), 68000 Assembly (as/has), Make, Human68k DOS/IOCS, x68k-gcc toolchain.
+- 対象機種: 初代 / ACE / EXPERT / PRO / SUPER / XVI / Compact / 030
+- 開発形態: Human68k ネイティブ gcc/XC か、クロス開発か
+- 直接叩く対象: GVRAM / TVRAM / CRTC / DMAC / MFP / 音源 / ストレージ / 通信
+- IOCS/DOS 呼び出しで足りるのか、性能要件のために直叩きが必要か
 
-## First Questions (Ask Up Front)
+## 出力方針
 
-- Target hardware environment (Base X68000, XVI, 030, or 060; Memory capacity).
-- Compiler/Assembler environment (Human68k native gcc/XC or cross-compiler).
-- Graphics mode requirements (16/256/65k colors) and intended I/O access method (IOCS vs. Direct).
+- 低レベル説明では、必ずどの `references/*.md` に根拠があるか明示する。
+- 直接 I/O アクセス例では、Supervisor モード移行と復帰を必ず明示する。
+- VRAM と I/O 領域を混同しない。`$E80000-$EBFFFF` はシステム I/O、`$C00000-$E7FFFF` は VRAM 系。
+- レジスタ名・アドレス・ビットは、PDF で確認できた範囲だけを書く。怪しい細部は断定しない。
+- `Inside X68000` に明記がない細部は、推測せず「要原典確認」と明示する。
 
-## Output Contract (How to Respond)
+## Reference の使い分け
 
-- **Review**: Classify points as "Privilege / Alignment / I/O Safety / Performance / Cleanup," providing rationale based on MC68000/X68000 hardware specs.
-- **Code Generation**: Always include Supervisor mode handling (`_iocs_super`) and `volatile` pointers for I/O. Specify alignment constraints.
-- **Hardware Logic**: Cite specific `references/` files (e.g., `dmac.md`, `memory-map.md`) to justify register offsets and bitmask values.
+- メモリ空間、I/O 配置、ROM/SRAM: `references/memory-map.md`, `references/user-io-rom.md`
+- DMA 転送、チャネル割り付け: `references/dmac.md`
+- 画面モード、VRAM、スプライト: `references/video-sprite.md`
+- タイマ、割り込み、キーボード系: `references/mfp-interrupts.md`, `references/input-rtc.md`
+- FM/ADPCM: `references/sound_adpcm.md`
+- FDD/HDC/SASI: `references/storage-controllers.md`
 
-## Design & Coding Rules (Expert Defaults)
+## 優先順位
 
-1. **Supervisor Mode Priority**: Every hardware access (I/O area `$E80000`+) must be wrapped in Supervisor mode. Use `_iocs_super(0)` and restore the stack immediately after.
-2. **Volatile Everything**: Declare all hardware register pointers as `volatile` to prevent compiler optimizations from breaking hardware status polling.
-3. **Strict 16-bit Alignment**: MC68000 triggers an Address Error exception on odd-address word/longword access. Always align data structures and pointers to 2-byte boundaries.
-4. **VRAM Segmentation**: Respect the plane structure of Graphic VRAM (`$C00000`) and Text VRAM (`$E00000`). Never assume a linear framebuffer without checking the video mode.
-5. **DMAC for Bulk Transfer**: Prefer HD63450 DMAC (Array Chain/Link Array Chain) over CPU loops for large memory or VRAM copies to maximize bus efficiency.
-6. **Interrupt Hygiene**: When hijacking MFP (MC68901) or system interrupts, always save original vectors and restore them on program termination.
-7. **V-Blank Synchronization**: To avoid "snow" or tearing, perform palette changes (`$E82000`) and VRAM updates during V-Blank (monitor via `_iocs_vdispst` or MFP interrupts).
-8. **Fixed-Width Types**: Use `unsigned char` (8-bit), `unsigned short` (16-bit), and `unsigned long` (32-bit) for register maps to ensure predictable memory layout.
-9. **DOS/IOCS First**: Use Human68k DOS/IOCS calls for standard functionality; bypass them only when absolute performance is required (e.g., games/demos).
-10. **Clean Exit**: Programs must restore video modes, interrupt masks, and palette states. A "dirty exit" often requires a hardware reset.
+1. まず `Inside X68000`
+2. 次に `references/*.md`
+3. それでも不足するときだけ Human68k IOCS / DOS 資料
 
-## Review Checklist (High-Signal)
+## 実装ルール
 
-- **Privilege**: Is the code attempting to access I/O or VRAM in User mode? (Triggers Bus Error).
-- **Alignment**: Are word/longword pointers checked for parity? (Triggers Address Error).
-- **Wait Loops**: Do loops polling hardware status have a timeout or `volatile` qualifier?
-- **Register Offsets**: Are DMAC/MFP register offsets correct, including padding for 16-bit bus alignment?
-- **Resource Leak**: Are Supervisor mode stack pointers or interrupt vectors left in an inconsistent state?
+1. システム I/O 直叩きは Supervisor モード前提。`_iocs_super(0)` で入り、必ず元に戻す。
+2. GVRAM / TVRAM はメモリ空間であり、I/O 領域とは別物として扱う。
+3. `volatile` を外さない。ポーリング対象やレジスタマップは必ず `volatile`。
+4. 68000 のワード/ロングアクセスは偶数アドレス前提。奇数アドレスアクセスは Address Error。
+5. 大量転送は CPU ループより DMAC を優先する。特に FDD/HDD/ADPCM は DMAC 前提で考える。
+6. 割り込みベクタや MFP 設定を横取りしたら、終了時に必ず復元する。
+7. パレット・表示タイミング・ラスタ制御は CRTC/ビデオ制御とセットで扱う。
+8. キーボードは SCC ではなく MFP 内蔵 USART 系として扱う。SCC は主に RS-232C/マウス側。
+9. ジョイスティックは i8255 / I/O コントローラ系。単純なメモリ読み出し 1 本で決め打ちしない。
+10. 怪しい場合は IOCS/DOS 優先。実機依存の直叩きは根拠があるときだけ出す。
 
-## Common Pitfalls
+## レビュー観点
 
-Refer to [Memory Map](references/memory-map.md) and [Hardware References](references/) for detailed case studies.
+- Supervisor モードが必要な I/O 領域を User モードで触っていないか
+- VRAM とシステム I/O の境界を取り違えていないか
+- 16bit/32bit アクセスの整列違反がないか
+- DMAC のチャネル割り当てとチャネルベースを誤っていないか
+- MFP/割り込みベクタを変更して復元漏れしていないか
+- キーボード、SCC、RTC、i8255 を混同していないか
 
-### ❌ Bad Examples
+## 悪い例
 
 ```c
-// NG: Bus Error (User mode access to VRAM)
-unsigned short *gvram = (unsigned short *)0xc00000;
-*gvram = 0x1234;
+// NG: システム I/O を user mode のまま直叩き
+*(volatile unsigned short *)0xE80000 = 0x0001;
 
-// NG: Address Error (Odd address access)
-unsigned long *ptr = (unsigned long *)0x001001;
-*ptr = 0xdeadbeef;
+// NG: odd address への long access
+*(volatile unsigned long *)0x001001 = 0xDEADBEEF;
 
-// NG: Compiler may optimize away this loop
-while (*(volatile char *)0xe88001 & 0x01); // Better, but needs careful definition
+// NG: キーボードを SCC と決め打ち
+*(volatile unsigned char *)0xE98001 = 0x55;
 ```
 
-### ✅ Good Examples
+## 良い例
 
 ```c
-// OK: Supervisor mode wrap and volatile usage
-void clear_screen() {
-    volatile unsigned short *gvram = (unsigned short *)0xc00000;
-    long old_stack = _iocs_super(0);
-    for (long i = 0; i < 1024 * 512; i++) {
+// OK: GVRAM はメモリ空間として扱う
+void clear_gvram_plane(void) {
+    volatile unsigned short *gvram = (volatile unsigned short *)0xC00000;
+    for (int i = 0; i < 512 * 1024 / 2; ++i) {
         gvram[i] = 0;
     }
-    _iocs_super(old_stack);
 }
 
-// OK: Alignment-safe register access
-typedef struct {
-    volatile unsigned char dummy;
-    volatile unsigned char data; // MFP registers are often on odd addresses
-} mfp_reg;
+// OK: CRTC/システム I/O は supervisor で扱う
+void write_crtc(volatile unsigned short *reg, unsigned short value) {
+    long old_sp = _iocs_super(0);
+    *reg = value;
+    _iocs_super(old_sp);
+}
 ```
 
-## AI-Specific Guidelines (Priorities for Implementation)
+## Resources
 
-1. **Hexadecimal Notation**: Always use uppercase hex (e.g., `$E80000`) for addresses.
-2. **Contextual Documentation**: Explicitly link to `references/dmac.md` or `references/video-sprite.md` when generating low-level drivers.
-3. **Code Safety**: Automatically insert `_iocs_super` wrappers in all I/O-related snippets unless the user specifies a resident driver (TSR) context.
-4. **Library Preference**: Default to `doslib.h` and `iocslib.h` (Human68k standard) for C code.
-
-## Resources & Scripts
-
-- **[Memory Map](references/memory-map.md)**: 16MB Address Space layout.
-- **[DMAC Control](references/dmac.md)**: HD63450 registers and chaining.
-- **[Video & Sprite](references/video-sprite.md)**: VRAM, Palettes, and Sprite logic.
-- **[MFP & Interrupts](references/mfp-interrupts.md)**: MC68901 and Exception vectors.
-- **[Input Devices](references/input-rtc.md)**: Keyboard, Mouse, Joystick ports and RTC.
-- **[Sound](references/sound_adpcm.md)**: FM音源 (YM2151) and ADPCM (MSM6258).
+- [Memory Map](references/memory-map.md)
+- [DMAC](references/dmac.md)
+- [Video / VRAM / Sprite](references/video-sprite.md)
+- [MFP / Interrupts](references/mfp-interrupts.md)
+- [Input / SCC / RTC](references/input-rtc.md)
+- [Sound](references/sound_adpcm.md)
+- [Storage Controllers](references/storage-controllers.md)
+- [User I/O / SRAM / ROM](references/user-io-rom.md)
 
 ## References
 
-- Inside X68000 (Masahiko Kuwano)
-- Human68k C Compiler (gcc / XC) Manuals
-- X68000 Technical Data Book
+- Inside X68000
+- Human68k IOCS / DOS documentation
