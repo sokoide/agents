@@ -6,7 +6,28 @@ This repository is a collection of **Skills** that provide "expert-level pattern
 
 - `skills/<skill-name>/SKILL.md`: The core skill (when to use, initial questions, output contract, review perspectives).
 - `skills/<skill-name>/references/`: Summaries for reference (intended to be read only when needed).
+- `skills/<skill-name>/scripts/`: Automated check scripts for code quality.
 - `skills/.system/`: Helpers for skill creation/installation, etc. (Usually not modified).
+
+## Available Skills
+
+| Skill | Language / Domain | Description |
+|-------|-------------------|-------------|
+| `bevy-master` | Rust / Bevy ECS | Bevy game engine expert (ECS, scheduling, plugins) |
+| `c-master` | C | System-level C (C99-C23, memory safety, embedded) |
+| `cleanarch-master` | Go / Architecture | Clean Architecture 4-layer enforcement |
+| `cpp-master` | C++ | High-performance C++ (C++11-23, RAII, templates) |
+| `csharp-master` | C# / .NET | Modern C#, ASP.NET Core, EF Core |
+| `ebiten-master` | Go / Ebiten | Ebitengine 2D game development |
+| `go-master` | Go | Idiomatic Go, concurrency, performance |
+| `java-master` | Java / Spring | Modern Java, Spring Boot, testing |
+| `mui-master` | React / MUI | Material UI design systems, Next.js integration |
+| `python-master` | Python | Pythonic design, async, Pydantic, FastAPI |
+| `rust-master` | Rust | Ownership, lifetimes, zero-cost abstractions |
+| `typescript-master` | TypeScript | Type engineering, tsconfig, runtime safety |
+| `writing-master` | Writing / Editing | Document proofreading, grammar, structure |
+| `x68k-master` | X68000 / MC68000 | Sharp X68000 system programming, hardware control |
+| `skill-creator` | Meta | Guide for creating and packaging new skills |
 
 ## Usage (Validation/Installation)
 

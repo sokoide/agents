@@ -100,6 +100,7 @@ void write_crtc(volatile unsigned short *reg, unsigned short value) {
 
 ## Resources
 
+- [Code Check Script](scripts/check.sh)
 - [Memory Map](references/memory-map.md)
 - [DMAC](references/dmac.md)
 - [Video / VRAM / Sprite](references/video-sprite.md)

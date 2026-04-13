@@ -5,6 +5,7 @@
 
 # Tools
 .serena/
+.omc/
 
 # Python
 __pycache__/

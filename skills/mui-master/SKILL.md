@@ -131,6 +131,10 @@ const theme = createTheme({
 5. **Next.js Integration**: Keep `'use client'` to a minimum. Use official EmotionCache/StyledRegistry patterns.
 6. **Use Grid2**: Use the new `Grid2` component for layouts.
 
+## Resources & Scripts
+
+- [Code Check Script](scripts/check.sh)
+
 ## References
 
 - [MUI Best Practices](references/best-practices.md)

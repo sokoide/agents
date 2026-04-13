@@ -127,4 +127,4 @@ func (g *Game) Update() error {
 
 ## Resources & Scripts
 
-- [Code Check Script](../scripts/check.sh)
+- [Code Check Script](scripts/check.sh)

@@ -8,7 +8,7 @@ INCLUDE_SYSTEM ?= 0
 # use pnpm if available, otherwise npx
 RUNNER := $(shell command -v pnpm >/dev/null 2>&1 && echo "pnpm dlx" || echo "npx")
 EXEC := $(shell command -v pnpm >/dev/null 2>&1 && echo "pnpm exec" || echo "npx")
-VALIDATOR := uv run --with PyYAML $(SKILLS_DIR)/.system/skill-creator/scripts/quick_validate.py
+VALIDATOR := uv run --with PyYAML $(SKILLS_DIR)/skill-creator/scripts/quick_validate.py
 
 .PHONY: list
 list:
@@ -17,8 +17,8 @@ list:
 .PHONY: validate
 validate:
 	@set -eu; \
-	if [ ! -f "$(SKILLS_DIR)/.system/skill-creator/scripts/quick_validate.py" ]; then \
-		echo "validator not found: $(SKILLS_DIR)/.system/skill-creator/scripts/quick_validate.py" >&2; \
+	if [ ! -f "$(SKILLS_DIR)/skill-creator/scripts/quick_validate.py" ]; then \
+		echo "validator not found: $(SKILLS_DIR)/skill-creator/scripts/quick_validate.py" >&2; \
 		exit 1; \
 	fi; \
 	find "$(SKILLS_DIR)" -maxdepth 2 -name SKILL.md -print | sed 's,/SKILL.md$$,,g' | sort | while read -r d; do \

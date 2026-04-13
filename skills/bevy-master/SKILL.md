@@ -113,4 +113,4 @@ fn update(
 
 ## Resources & Scripts
 
-- [Code Check Script](../scripts/check.sh)
+- [Code Check Script](scripts/check.sh)

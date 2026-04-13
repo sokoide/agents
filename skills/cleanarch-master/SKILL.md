@@ -111,4 +111,4 @@ All reviews, judgments, and refactoring advice **MUST conform to that document**
 
 ## Resources & Scripts
 
-- [Code Check Script](../scripts/check.sh)
+- [Code Check Script](scripts/check.sh)

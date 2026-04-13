@@ -3,21 +3,23 @@
 ## Project Structure & Module Organization
 
 - `skills/` contains all skill packages. Each skill lives in `skills/<skill-name>/` with a required `SKILL.md` and optional `references/`, `scripts/`, and `assets/`.
-- `skills/.system/` holds system skills (e.g., `skill-creator`, `skill-installer`) and their helper scripts.
-- `.serena/` is local metadata and is gitignored; avoid relying on it for repo logic.
+- `skills/skill-creator/` holds the skill creation/packaging toolkit and their helper scripts.
+- `.serena/` and `.omc/` are local metadata and are gitignored; avoid relying on them for repo logic.
 
 ## Build, Test, and Development Commands
 
 This repository is content- and script-focused; there is no global build.
 
 - Initialize a new skill:
-  - `python3 skills/.system/skill-creator/scripts/init_skill.py my-skill --path skills/`
+  - `python3 skills/skill-creator/scripts/init_skill.py my-skill --path skills/`
   - Creates the skill folder with `SKILL.md` and optional resources.
-- Validate a skill’s `SKILL.md`:
-  - `python3 skills/.system/skill-creator/scripts/quick_validate.py skills/my-skill`
+- Validate a skill's `SKILL.md`:
+  - `python3 skills/skill-creator/scripts/quick_validate.py skills/my-skill`
   - Checks YAML frontmatter and naming rules.
-- List curated installable skills:
-  - `python3 skills/.system/skill-installer/scripts/list-curated-skills.py`
+- Validate all skills:
+  - `make validate`
+- Package a skill:
+  - `python3 skills/skill-creator/scripts/package_skill.py skills/my-skill`
 
 ## Coding Style & Naming Conventions
 
