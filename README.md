@@ -12,7 +12,7 @@ This repository is a collection of **Skills** that provide "expert-level pattern
 ## Available Skills
 
 | Skill | Language / Domain | Description |
-|-------|-------------------|-------------|
+| ------- | ------------------- | ------------- |
 | `bevy-master` | Rust / Bevy ECS | Bevy game engine expert (ECS, scheduling, plugins) |
 | `c-master` | C | System-level C (C99-C23, memory safety, embedded) |
 | `cleanarch-master` | Go / Architecture | Clean Architecture 4-layer enforcement |
