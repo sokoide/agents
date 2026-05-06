@@ -127,3 +127,48 @@ internal/framework/http/...      // handlers, middleware, routing
 - UseCase directly performs SQL / HTTP (Missing Port/Adapter separation).
 - Framework circumvents UseCase to directly manipulate Domain / Infra.
 - Infra Adapter holds business decisions (the core logic for conditional branching).
+
+## 10. Dependency Direction Diagram
+
+The dependency arrows always point from outer layers toward inner layers:
+
+```text
+    Framework ──→ UseCase ──→ Domain
+                              ↑
+         Infra Adapter ───────┘
+```
+
+Expanded view showing both paths:
+
+```text
+    Framework ──→ UseCase ──→ Domain
+                    ↑            ↑
+         Infra Adapter ──────────┘
+```
+
+### Key Points
+
+1. **UseCase → Domain**: Fixed dependency. UseCase always uses Domain's business rules.
+2. **Framework → UseCase**: Controllers/Handlers call UseCase. Natural and expected.
+3. **Infra → UseCase (Dependency Inversion)**: Repository / Gateway implementations satisfy interfaces defined in Domain or UseCase. This is the core of the Dependency Inversion Principle.
+4. **Infra → Domain**: Acceptable and common. ORM persistence layers, DTO mapping, and Domain type references naturally create this dependency. This is NOT a violation.
+
+### Dependency Matrix (Visual)
+
+| From ↓ To → | Domain | UseCase | Infra | Framework |
+|-------------|--------|---------|-------|-----------|
+| Domain      |   ✓    |    ✗    |   ✗   |     ✗     |
+| UseCase     |   ✓    |    ✓    |   ✗   |     ✗     |
+| Infra       |   ✓    |    ✓*   |   ✓   |     ✗     |
+| Framework   |   ✗    |    ✓    |   ✗   |     ✓     |
+
+✓ = Allowed | ✗ = Prohibited | ✓* = Via interface (Dependency Inversion)
+
+### Implementation Order: Inner → Outer
+
+When adding features, implement from the innermost layer outward:
+
+1. **Domain** — Define Entity, business rules, Port interfaces, domain errors
+2. **UseCase** — Orchestrate Domain Ports, define Input/Output DTOs
+3. **Infra Adapter** — Implement Ports, handle DB/external API details
+4. **Framework** — Wire input parsing, call UseCase, format responses

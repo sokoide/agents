@@ -106,8 +106,8 @@ All reviews, judgments, and refactoring advice **MUST conform to that document**
 
 ## References
 
-- [Clean Arch](references/clean-arch-4layer.md)
-- [Common Pitfalls](references/pitfalls.md)
+- [Clean Arch (Rules & Dependency Diagram)](references/clean-arch-4layer.md)
+- [Common Pitfalls & Scenario Guide](references/pitfalls.md)
 
 ## Resources & Scripts
 
