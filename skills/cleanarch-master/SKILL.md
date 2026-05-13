@@ -70,7 +70,7 @@ All reviews, judgments, and refactoring advice **MUST conform to that document**
 
 - Web / gRPC / CLI / Job Runner.
 - Input conversion, authentication, response formatting.
-- Simply calls the UseCase.
+- Simply calls the UseCase (Interface is optional).
 - Does not directly handle Infra Adapter details.
 
 ## Review Checklist (Required Output)

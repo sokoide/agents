@@ -110,6 +110,7 @@ The outermost I/O layer (Web / gRPC / CLI / Job Runner).
 
 - Assembly of concrete instances is concentrated in **Main/Composition Root** (e.g., `cmd/<app>/main.go`).
 - Framework does not know about Port implementations (Infra Adapter); it calls them through the UseCase.
+- **Note on UseCase interfaces**: While dependencies must point inward, the Framework layer is not strictly required to access the UseCase via an interface. Direct reference to concrete UseCase classes/structs is acceptable if there is no immediate need for swapping implementations or mocking at the Framework level.
 
 ## 8. Typical Directory Layout (Go)
 
@@ -149,7 +150,7 @@ Expanded view showing both paths:
 ### Key Points
 
 1. **UseCase → Domain**: Fixed dependency. UseCase always uses Domain's business rules.
-2. **Framework → UseCase**: Controllers/Handlers call UseCase. Natural and expected.
+2. **Framework → UseCase**: Controllers/Handlers call UseCase. This is natural and expected. An interface is not strictly required here if the UseCase is not intended to be swapped or if mocking is not a priority for Framework-level testing.
 3. **Infra → UseCase (Dependency Inversion)**: Repository / Gateway implementations satisfy interfaces defined in Domain or UseCase. This is the core of the Dependency Inversion Principle.
 4. **Infra → Domain**: Acceptable and common. ORM persistence layers, DTO mapping, and Domain type references naturally create this dependency. This is NOT a violation.
 
