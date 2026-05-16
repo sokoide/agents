@@ -54,10 +54,10 @@ layer_of() {
     elif echo "$pkg" | grep -qE '(/presentation/|/transport/|/adapter/http|/adapter/grpc|/adapter/api|/handler/|/controller/)'; then
         echo "presentation"
     # UseCases
-    elif echo "$pkg" | grep -qE '(/usecase/|/interactor/|/application/|/app/)'; then
+    elif echo "$pkg" | grep -qE '(/usecase/|/interactor/|/application/)'; then
         echo "usecase"
-    # Domain (broadest — includes entity, domain, model, port/interface definitions)
-    elif echo "$pkg" | grep -qE '(/domain/|/entity/|/model/)'; then
+    # Domain (includes entity, domain, port/interface definitions)
+    elif echo "$pkg" | grep -qE '(/domain/|/entity/)'; then
         echo "domain"
     else
         echo "other"
@@ -169,15 +169,11 @@ echo "--- 3. ORM / Transport Annotations in Domain ---"
 ORM_TAG_PATTERNS=(
     'gorm:"'
     'db:"'
-    'json:"'
-    'yaml:"'
     'protobuf:"'
-    'validate:"'
     'binding:"'
     'form:"'
     'query:"'
     'uri:"'
-    'xml:"'
 )
 
 for dir in $(find . -type d \( -path '*/domain/*' -o -path '*/entity/*' \) 2>/dev/null); do

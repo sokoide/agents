@@ -142,3 +142,109 @@ func (uc *UpdateUserUseCase)Execute(ctx context.Context, in UpdateUserInput) err
     return uc.users.Save(ctx, user)
 }
 ```
+
+## 5. Adding / Changing Business Rules — Inner → Outer
+
+When a business rule changes (e.g., "only thread owner can post"):
+
+1. **Domain**: Add flag or method to Entity, define business rule and domain error.
+2. **UseCases**: Add 1-2 lines to apply the rule (e.g., `if !thread.CanPost() { return ErrNotThreadOwner }`).
+3. **Infra Adapters**: Update DB schema and mapping logic for the new data.
+4. **Presentation**: Update input DTO and add domain error → transport error mapping (e.g., 403).
+
+**Anti-pattern**: Hardcoding business rules in HTTP handlers or SQL queries.
+
+## 6. Swapping Infrastructure — Infra Adapters + Composition Root Only
+
+When changing DB (SQLite → PostgreSQL) or external service:
+
+1. **Infra Adapters**: Create a new struct implementing the existing Domain or UseCase Port interface.
+2. **Composition Root** (`main.go`): Swap the injected concrete implementation.
+3. **Domain / UseCases**: Zero changes needed — they depend on interfaces.
+
+## 7. Adding External Service Integration — New Port + Adapter
+
+When adding notification, logging, or other external integrations:
+
+1. **Domain or UseCases**: Define an interface (e.g., `NotificationGateway`). Do NOT name it after the concrete service (e.g., not `SlackGateway`).
+2. **Infra Adapters**: Implement the concrete adapter (e.g., `SlackGateway` using webhooks).
+3. **UseCases**: Call the gateway after success logic. Call outside DB transaction to prevent rollback on notification failure.
+4. **Testing**: Mock the interface with a NoOp implementation — no real notifications needed.
+
+## 8. Adding Cross-Cutting Concerns — Decorator / Middleware
+
+**Caching**: Use the Decorator pattern.
+
+```go
+// CachingRepository wraps the real repository
+type CachingRepository struct {
+    inner domain.Repository
+    cache map[string]domain.Entity
+}
+
+func (r *CachingRepository) FindByID(id string) (domain.Entity, error) {
+    if v, ok := r.cache[id]; ok {
+        return v, nil
+    }
+    v, err := r.inner.FindByID(id)
+    if err != nil { return nil, err }
+    r.cache[id] = v
+    return v, nil
+}
+```
+
+UseCase code remains unchanged — the decorator is transparent.
+
+**Authentication**: Use Presentation-layer middleware.
+
+- Verify JWT / API key in middleware.
+- Extract user ID and pass it via UseCase Input DTO.
+- UseCase remains unaware of authentication technology (JWT vs API key vs OAuth).
+
+## 9. Changing Communication Protocol — Presentation Swap Only
+
+When switching REST → gRPC (or adding a new protocol):
+
+1. **Presentation**: Create new gRPC handler alongside the existing REST handler.
+2. Both call the same UseCase.
+3. **Domain / UseCases / Infra Adapters**: Zero changes.
+
+## 10. Testing Boundaries
+
+Clean Architecture enables targeted testing at each layer:
+
+**Domain unit tests**: Test entities and domain services with no mocks needed. Domain depends on nothing external.
+
+```go
+func TestUserActivate(t *testing.T) {
+    u := domain.User{Name: "Alice"}
+    err := u.Activate()
+    assert.NoError(t, err)
+    assert.Equal(t, "Active", u.Status)
+}
+```
+
+**UseCase unit tests**: Mock or stub boundary interfaces (ports) defined in Domain or UseCases.
+
+```go
+type stubUserRepo struct {
+    saved *domain.User
+}
+
+func (s *stubUserRepo) Save(ctx context.Context, u *domain.User) error {
+    s.saved = u
+    return nil
+}
+
+func TestCreateUser(t *testing.T) {
+    repo := &stubUserRepo{}
+    uc := usecase.NewCreateUser(repo)
+    err := uc.Execute(ctx, usecase.CreateUserInput{Name: "Alice"})
+    assert.NoError(t, err)
+    assert.Equal(t, "Alice", repo.saved.Name)
+}
+```
+
+**Infra Adapter integration tests**: Use a real database or test container. Verify mapping, queries, and error conversion.
+
+**Presentation tests**: Mock UseCase entry points. Verify request parsing, response mapping, and transport error conversion.

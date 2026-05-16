@@ -20,7 +20,7 @@ This skill uses: Bash (for go commands), Glob, Grep, Read, Edit, Write
 
 ## Core Philosophy
 
-This skill **uses the rules defined in** [`references/clean-arch-4layer.md`](references/clean-arch-4layer.md) **asClean Architecture guidance for this practical Go variant**
+This skill **uses the rules defined in** [`references/clean-arch-4layer.md`](references/clean-arch-4layer.md) **as Clean Architecture guidance for this practical Go variant**
 
 Reviews, judgments, and refactoring advice **MUST enforce the Dependency Rule and boundary separation**. Treat exact package layout, port placement, naming, and rich-vs-anemic domain style as context-dependent design choices unless the project has an explicit local rule.
 
@@ -63,13 +63,13 @@ Reviews, judgments, and refactoring advice **MUST enforce the Dependency Rule an
 - Commonly defines ports for application-specific external capabilities.
 - Agnostic of technical details.
 
-### Infra Adapter Layer
+### Infra Adapters
 
 - Repository and gateway implementations for persistence, external APIs, files, queues, and SDKs.
 - Converts persistence and external-service data into inner-layer models.
 - Contains technical details like DB / External API / File system while keeping them out of Domain / UseCases.
 
-### Presentation Layer
+### Presentation
 
 - HTTP / gRPC / CLI handlers, controllers, presenters, and request / response mapping.
 - Converts incoming requests into UseCase input and UseCase output into transport responses.

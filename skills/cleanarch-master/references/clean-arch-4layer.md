@@ -143,7 +143,7 @@ Adapters that deliver application behavior to users or external callers.
 | Presentation     | maybe  | yes      | no             | yes          |
 | Composition Root | yes    | yes      | yes            | yes          |
 
-`Presentation -> Domain` is `maybe` because response mapping may read domain values returned by UseCases. Presentation must not bypass UseCases to run domain workflow or persistence decisions.
+`Presentation -> Domain` is `maybe` because response mapping may read domain values returned by UseCases for serialization only. Presentation must not invoke Domain methods to make workflow or business decisions, and must not bypass UseCases for persistence or application workflow.
 
 ## 5. Port Ownership Guidance
 
