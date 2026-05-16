@@ -166,7 +166,7 @@ When changing DB (SQLite → PostgreSQL) or external service:
 
 When adding notification, logging, or other external integrations:
 
-1. **Domain or UseCases**: Define an interface (e.g., `NotificationGateway`). Do NOT name it after the concrete service (e.g., not `SlackGateway`).
+1. **Domain or UseCases**: Define an interface (e.g., `NotificationGateway`). Prefer capability-oriented names over concrete service names (e.g. `NotificationGateway` rather than `SlackGateway`) so the inner contract does not depend on a replaceable vendor detail.
 2. **Infra Adapters**: Implement the concrete adapter (e.g., `SlackGateway` using webhooks).
 3. **UseCases**: Call the gateway after success logic. Call outside DB transaction to prevent rollback on notification failure.
 4. **Testing**: Mock the interface with a NoOp implementation — no real notifications needed.

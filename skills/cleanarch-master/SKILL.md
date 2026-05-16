@@ -5,7 +5,7 @@ description: >
     (1) Clean Architecture design/review/refactoring in Go.
     (2) Resolving Dependency Rule violations such as Entities/Domain with external deps, UseCase with DB/HTTP, or adapters leaking inward.
     (3) Dependency inversion, boundary DTOs, Port/Adapter separation, and Composition Root wiring.
-    (4) Separating Presentation from Infra Adapters so input/output handling and external integrations do not drown the same layer.
+    (4) Separating Presentation from Infra Adapters so input/output handling and external integrations do not crowd the same layer.
 ---
 
 # Clean Architecture Master
@@ -20,7 +20,7 @@ This skill uses: Bash (for go commands), Glob, Grep, Read, Edit, Write
 
 ## Core Philosophy
 
-This skill **uses the rules defined in** [`references/clean-arch-4layer.md`](references/clean-arch-4layer.md) **as Clean Architecture guidance for this practical Go variant**
+This skill **uses the rules defined in** [`references/clean-arch-4layer.md`](references/clean-arch-4layer.md) **as Clean Architecture guidance for this practical Go variant**.
 
 Reviews, judgments, and refactoring advice **MUST enforce the Dependency Rule and boundary separation**. Treat exact package layout, port placement, naming, and rich-vs-anemic domain style as context-dependent design choices unless the project has an explicit local rule.
 
@@ -63,13 +63,13 @@ Reviews, judgments, and refactoring advice **MUST enforce the Dependency Rule an
 - Commonly defines ports for application-specific external capabilities.
 - Agnostic of technical details.
 
-### Infra Adapters
+### Infra Adapters Layer
 
 - Repository and gateway implementations for persistence, external APIs, files, queues, and SDKs.
 - Converts persistence and external-service data into inner-layer models.
 - Contains technical details like DB / External API / File system while keeping them out of Domain / UseCases.
 
-### Presentation
+### Presentation Layer
 
 - HTTP / gRPC / CLI handlers, controllers, presenters, and request / response mapping.
 - Converts incoming requests into UseCase input and UseCase output into transport responses.
@@ -116,4 +116,4 @@ Reviews, judgments, and refactoring advice **MUST enforce the Dependency Rule an
 
 ## Resources & Scripts
 
-- [Code Check Script](scripts/check.sh)
+- [Code Check Script](scripts/check.sh) - Run at the target Go project root during review to detect dependency direction and boundary violations.
