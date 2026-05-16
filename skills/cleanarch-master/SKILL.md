@@ -1,18 +1,18 @@
 ---
 name: cleanarch-master
 description: >
-    Clean Architecture master for Go-style 4-layer architecture. Enforces strict
-    dependency rules, domain ownership of ports, and clear separation between Framework
-    and Infra Adapters. Use for:
+    Clean Architecture master for Go applications using a practical 4-layer variant: Domain, UseCases, Infra Adapters, and Presentation. Use for:
     (1) Clean Architecture design/review/refactoring in Go.
-    (2) Resolving layer boundary violations (Domain with external deps, UseCase with DB/HTTP).
-    (3) Dependency injection (Composition Root) and Port/Adapter separation.
-    (4) Enforcing 4-layer strict dependency rules.
+    (2) Resolving Dependency Rule violations such as Entities/Domain with external deps, UseCase with DB/HTTP, or adapters leaking inward.
+    (3) Dependency inversion, boundary DTOs, Port/Adapter separation, and Composition Root wiring.
+    (4) Separating Presentation from Infra Adapters so input/output handling and external integrations do not drows the same layer.
 ---
 
 # Clean Architecture Master
 
-This skill provides Clean Architecture (4-layer) guidance for Go applications, enforcing strict dependency rules and domain ownership of ports.
+This skill provides Clean Architecture guidance for Go applications using a practical 4-layer variant: **Domain, UseCases, Infra Adapters, and Presentation**.
+
+This variant stays compatible with the original Clean Architecture circles, but splits the original **Interface Adapters** circle into **Presentation** and **Infra Adapters**.
 
 ## Related Tools
 
@@ -20,28 +20,29 @@ This skill uses: Bash (for go commands), Glob, Grep, Read, Edit, Write
 
 ## Core Philosophy
 
-This skill **strictly follows the rules defined in** [`references/clean-arch-4layer.md`](references/clean-arch-4layer.md).
+This skill **uses the rules defined in** [`references/clean-arch-4layer.md`](references/clean-arch-4layer.md) **asClean Architecture guidance for this practical Go variant**
 
-All reviews, judgments, and refactoring advice **MUST conform to that document**.
+Reviews, judgments, and refactoring advice **MUST enforce the Dependency Rule and boundary separation**. Treat exact package layout, port placement, naming, and rich-vs-anemic domain style as context-dependent design choices unless the project has an explicit local rule.
 
 1. **Domain-Centricity**
    Software value lies in the Domain (business rules).
-   DB, HTTP, and Framework are interchangeable details.
+   DBs, HTTP routers, CLIs, SDKs, driveres, and other external mechanisms are interchangeable details handled by Presentation, Infra Adapters, or the Composition Root.
 
-2. **Strict Dependency Rule**
+2. **Dependency Rule**
    Dependencies always point from outer layers toward the inner layers.
-   The Domain depends on nothing.
+   The Domain depends on no technical outer mechanism.
 
-3. **Explicit Outer Layers**
+3. **Practical Go Layer Mapping**
+   The original Interface Adapters circle is split by responsibility:
    Outer parts are separated into two types:
-    - **Framework Layer** (Web / gRPC / CLI)
-    - **Infra Adapter Layer** (DB / External API / Files)
+    - **Presentation** (HTTP / gRPC / CLI handlers, presenters, request / response mapping)
+    - **Infra Adapters** (DB / External API / Files / queues / SDK integrations)
 
 ## Output Contract (How to Respond)
 
 - **Diagnosis**: List dependency violations (imports/references), responsibility mixing, and breaches of data/error boundaries.
-- **Correction**: Propose incremental steps in the order of "Port definition → Adapter extraction → Thinning the Framework."
-- **Condition for Assertiveness**: In this skill, determine "contract violations" based on references rather than "preferences."
+- **Correction**: Propose incremental steps in the order of "Boundary definition → Adapter extraction → Thinning the outer layer."
+- **Condition for Assertiveness**: Be assertive on Dependency Rule violations and technical details leaking inward. Label port placement, naming, UseCase interface choices, and rich-vs-anemic domain style as trade-offs unless the project defines them as rules.
 
 ## Layer Definitions (Summary)
 
@@ -49,65 +50,69 @@ All reviews, judgments, and refactoring advice **MUST conform to that document**
 
 ### Domain Layer
 
-- Entity
-- Domain Service
-- **Repository / Gateway Interface (Port)**
+- Entity.
+- Domain Service.
+- Business rules and domain errors.
+- Ports only when the abstraction belongs to the Domain language.
 - No dependencies on external libraries or external error types.
 
-### UseCase Layer
+### UseCases Layer
 
 - Application-specific procedures (Orchestration).
-- Utilizes Domain Ports.
+- Coordinates Entities and boundary interfaces.
+- Commonly defines ports for application-specific external capabilities.
 - Agnostic of technical details.
 
 ### Infra Adapter Layer
 
-- Concrete implementation of Ports defined by the Domain.
-- Contains technical details like DB / External API / File system.
-- Converts Driver Errors into a format suitable for Domain / UseCase.
+- Repository and gateway implementaions for persistence, external APIs, files, queues, and SDKs.
+- Converts persistence and external-service data into inner-layer models.
+- Contains technical details like DB / External API / File system while keeping them out of Domain / UseCases.
 
-### Framework Layer
+### Presentaion Layer
 
-- Web / gRPC / CLI / Job Runner.
-- Input conversion, authentication, response formatting.
-- Simply calls the UseCase (Interface is optional).
-- Does not directly handle Infra Adapter details.
+- HTTP / gRPC / CLI handlers, controllers, presenters, and request / response mapping.
+- Converts incoming requests into UseCase input and UseCase output into transport responses.
+- May use web or CLI frameworks as outer details, but does not own business workflow or persistence decisions.
+
 
 ## Review Checklist (Required Output)
 
-- **Dependency Direction**: Check if Domain imports external packages, UseCase depends directly on Infra Adapter, or Framework operates directly on the Domain.
-- **Responsibility Boundaries**: Check if Entity contains I/O or procedures, UseCase has too many business rules, or Infra Adapter has decision logic.
-- **Port Design**: Check if Repository / Gateway interfaces are defined in the Domain and if they leak technical details like SQL / HTTP.
-- **Error Boundary**: Check if Infra Adapter returns driver errors directly, if Domain / UseCase returns domain errors, and if Framework converts them into transport errors (HTTP status, etc.).
-- **Data Boundary**: Check if UseCase input / output are clearly defined, if Entity is mixed with Framework DTOs, and if Mapping responsibility is consistent.
-- **Transaction Management**: Check if the UseCase layer controls transaction boundaries and if technical details like `sql.Tx` leak into Domain / UseCase.
+- **Dependency Direction**: Check if Domain imports external packages, UseCases depend directly on concrete adapters/drivers, or Presentation bypasses UseCases for application workflows.
+- **Responsibility Boundaries**: Check if Entity contains I/O or Presentation / Infra Adapter concerns, UseCases own domain invariants that belong in Entities, or adapters contain business decisions.
+- **Port Design**: Check if Repository / Gateway interfaces are defined on the side that owns the policy or use case need, and if they leak technical details like SQL / HTTP.
+- **Error Boundary**: Check if Infra Adapter returns driver errors directly, if Domain / UseCases return domain or application errors, and if Presentation converts them into transport errors (HTTP status, etc.).
+- **Data Boundary**: Check if UseCase input / output are clearly defined, if Entity is mixed with transport or persistence DTOs, and if Mapping responsibility is consistent.
+- **Transaction Management**: Check if the UseCases layer controls transaction policy and if technical details like `sql.Tx` leak into Domain / UseCases.
 - **Configuration Injection**: Check if configuration values (Config struct) are injected into UseCase / Adapter, leaving the Domain unaware of them.
 
 ## Common Violations (Fast Smell List)
 
 - Domain leaks types like `database/sql`, `net/http`, or ORM/SDK.
-- UseCase handles SQL / HTTP / File I/O directly (Adapters not separated).
-- Framework persists/converts Entity directly, bypassing the UseCase.
+- UseCases handle SQL / HTTP / File I/O directly (Adapters not separated).
+- Presentation persists Domain objects or drives business workflow directly, bypassing UseCases.
 - Infra Adapter contains domain decisions (business logic).
 - Driver errors (e.g., SQL errors) leak through boundaries to upper layers.
 
 ## AI-Specific Guidelines (Priorities for Implementation)
 
 1. **Dependency Direction First**: Prioritize adherence to layer boundaries and dependency direction over technical ease (e.g., library convenience features).
-2. **Avoid Lazy Type Sharing**: When crossing layers, define DTOs and Mapping even if it's tedious, to ensure Entity is not tainted by external (Framework/Infra) concerns.
-3. **Domain Defines Ports**: The Domain decides "what is needed," and the Adapter decides "how to achieve it." Do not misplace interface definitions.
-4. **Abstract Errors**: Do not leak database-specific errors (e.g., `sql.ErrNoRows`) above the UseCase. Always convert them to Domain Errors.
-5. **Context Propagation**: Use `context.Context` correctly for propagating transaction or tracing information, maintaining consistent function signatures.
+2. **Avoid Lazy Type Sharing**: When crossing layers, define DTOs and Mapping when it protects the inner policy from transport, persistence, Presentation, or Infra Adapter concerns.
+3. **Ports Belong to the Policy That nEeds Them**: Define interfaces in an inner layer that expresses the required behavior. Domain-owned ports are valid for domain-lnaguage needs; UseCas-owned ports are common for application-specific integrations. Infra Adapters decide "how to achieve it."
+4. **Abstract Errors**: Do not leak database-specific errors (e.g., `sql.ErrNoRows`) above UseCases. Convert them to domain or application errors with business meaning.
+5. **Go Context Propagation**: Use `context.Context` for cancellations, deadlines, and tracing. Do not use context as a hidden carrier ofr technical details such as `sql.Tx`.
 
 ## Positioning
 
-- This skill enforces **architectural correctness**, not coding style.
-- **Prioritize reference conventions** over Framework or ORM idiomatic styles.
+- This skill enforces **general Clean Architecture boundaries**, not generic coding style.
+- **Prioritize the Dependency Rule** over Framework or ORM convenience features.
+- Use **Domain / UseCases / Infra Adapters / Presentation** as the preferreed vocabulary for this skill.
+- For Go-specific layout, naming, and implementation pattern, adapt to the existing codebase unless they blur the four responsibilities or brek the Dependency Rule.
 
 ## References
 
 - [Clean Arch (Rules & Dependency Diagram)](references/clean-arch-4layer.md)
-- [Common Pitfalls & Scenario Guide](references/pitfalls.md)
+- [Common Pitfalls](references/pitfalls.md)
 
 ## Resources & Scripts
 

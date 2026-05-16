@@ -1,175 +1,246 @@
-# Clean Architecture (Go-style 4-Layer)
+# Clean Architecture for Go (Practical 4-Layer Variant)
 
-This document is the **single source of truth** for `cleanarch-master`. Any structure that contradicts this is handled as a **contract violation**, not a "preference."
+This document uses a common practical Clean Architecture variant for Go: **Domain, UseCases, Infra Adapters, and Presentation**.
 
-## 1. Non-Negotiable Rules
+The variant is compatible with the original Clean Architecture circles, but it splits the original **Interface Adapters** circle into **Presentation** and **Infra Adapters**. This split is intentional: grouping input handlers, output presenters, persistence adapters, and external-service adapters under one Interface Adapters label makes code navigation and ownership crowded.
 
-- **Framework only calls the UseCase** (Limited to Input / Auth / Response Formatting).
-- **Infra Adapter implements Ports defined by the Domain** (No implementations in Domain or UseCase).
-- **Domain depends on nothing external** (No imports for DB / HTTP / ORM / SDK / Framework types).
-- **Dependency direction is always from Outer to Inner** (Framework → UseCase → Domain ← Infra Adapter).
+## 1. Mapping to Original Clean Architecture
 
-## 2. Layer Definitions & Responsibilities
+| Original Clean Architecture | This Skill's Practical Variant / Placement                                     |
+| --------------------------- | ------------------------------------------------------------------------------ |
+| Entities                    | Domain                                                                         |
+| Use Cases                   | UseCases                                                                       |
+| Interface Adapters          | Presentation + Infra Adapters                                                  |
+| Frameworks & Drivers        | Concrete mechanisms used by Presentation, Infra Adapters, and Composition Root |
 
-### Domain (Domain Layer)
+`Frameworks & Drivers` is listed here only as the original Clean Architecture term. In this skill, it is not used as a layer name; web frameworks, DB drivers, SDKs, runtimes, and similar details live at the edge through Presentation, Infra Adapters, or the Composition Root.
 
-#### Domain Definition
+The names differ, but the main rule stays the same: source-code dependencies point inward toward higher-level policies.
 
-The business rules themselves (irreplaceable value).
+## 2. Core Rules
 
-#### Domain Components
+- **Dependencies point inward**: outer layers depend on inner policies, not the other way around.
+- **Domain stays independent of technical details**: no DB, HTTP, ORM, SDK, web framework, generated transport type, or request context in domain models or domain rules.
+- **UseCases express application-specific policies**: they orchestrate Domain objects and boundary interfaces without direct SQL / HTTP / file / SDK calls.
+- **Infra Adapters implement external mechanisms**: persistence, external APIs, files, queues, and SDK integrations implement inner ports.
+- **Presentation handles delivery concerns**: HTTP, gRPC, CLI, controllers, presenters, request parsing, response mapping, authentication entry points, and transport error mapping.
 
-- Entity
+## 3. Layer Definitions & Responsibilities
+
+### Domain
+
+#### Definition
+
+Enterprise-wide or domain-level business rules: the concepts that remain valuable even if UI, database, or external services change.
+
+#### Typical Components
+
+- Entity / Aggregate / Value Object
 - Domain Service
-- Repository / Gateway Interface (Port)
+- Domain Error
+- Domain-owned Port only when the abstraction is part of the domain language
 
-#### Domain Responsibilities
+#### Responsibilities
 
-- Defining business rules.
-- Abstract contract for persistence and external integration (Port).
+- Define business invariants and behavior.
+- Keep domain vocabulary independent from Presentation and Infra Adapter concerns such as transport, persistence, framework, and SDK details.
 
-#### Domain Dependencies
+#### Dependencies
 
-- Zero external dependencies (Standard library only within the range "necessary for domain representation").
+- Self-written domain code and minimal standard library needed to represent the domain.
+- No technical dependencies such as `database/sql`, `net/http`, ORM tags, web contexts, SDK clients, or generated transport types.
 
-### UseCase (UseCase Layer)
+### UseCases
 
-#### UseCase Definition
+#### Definition
 
-Procedures for specific application functions (Orchestration).
+Application-specific procedures that coordinate a user goal or system action.
 
-#### UseCase Responsibilities
+#### Responsibilities
 
-- Manipulation of the Domain and control of procedures.
-- Application control like transactions and retries ("policies" rather than technical details).
-- Defining UseCase Input/Output (DTOs).
+- Orchestrate Domain objects and domain services.
+- Define input/output boundaries and application DTOs where useful.
+- Define ports/gateways needed by the use case, especially for persistence or external capabilities that are not domain vocabulary.
+- Control application policies such as transactions, retries, idempotency, and authorization decisions that belong to the use case.
 
-#### UseCase Dependencies
+#### Dependencies
 
-- Depends only on the Domain (Unaffected by Infra / Framework).
+- Domain.
+- Boundary interfaces owned by the UseCases layer.
+- No direct dependency on concrete Presentation, Infra Adapters, web frameworks, database drivers, SDK clients, or serializers.
 
-### Infra Adapter (Infra Adapter Layer)
+### Infra Adapters
 
-#### Infra Adapter Definition
+#### Definition
 
-Bridge to external systems (DB, external API, Files, etc.).
+Adapters that connect UseCases or Domain-owned ports to external systems.
 
-#### Infra Adapter Responsibilities
+#### Typical Components
 
-- Concrete implementation of Domain Ports.
-- Converting driver errors into domain/usecase error formats.
-- Encapsulating technical details (SQL, HTTP, SDK, serializers, etc.).
+- Repository implementations
+- Gateway implementations
+- Persistence models
+- External-service DTOs
+- File, queue, cache, payment, search, notification, and SDK adapters
 
-#### Infra Adapter Dependencies
+#### Responsibilities
 
-- Domain (Port/Entity/Domain Error).
-- External resources (DB, HTTP, SDK, Files).
+- Implement inner ports using databases, APIs, files, queues, caches, or SDKs.
+- Convert persistence and external-service data into inner-layer models.
+- Convert driver errors into domain or application errors with meaning.
+- Keep technical details out of Domain and UseCases.
 
-### Framework (Framework Layer)
+#### Dependencies
 
-#### Framework Definition
+- Inner layer interfaces and models they implement or map.
+- External libraries and drivers needed by the adapter.
+- They should not be depended on by Domain or UseCases code.
 
-The outermost I/O layer (Web / gRPC / CLI / Job Runner).
+### Presentation
 
-#### Framework Responsibilities
+#### Definition
 
-- Input conversion (Request → UseCase Input).
-- Authentication, authorization, and routing.
-- Calling the UseCase.
-- Output conversion (UseCase Output → Response, HTTP status, etc.).
+Adapters that deliver application behavior to users or external callers.
 
-#### Framework Dependencies
+#### Typical Components
 
-- Depends only on the UseCase (No direct manipulation of Domain or Infra).
+- HTTP handlers / controllers
+- gRPC handlers
+- CLI commands
+- Job or message handlers
+- Presenters / response mappers
+- Request DTOs and response DTOs
 
-## 3. Dependency Matrix (Permissible Dependencies)
+#### Responsibilities
 
-- **Domain →** Self-written code + minimal standard library (e.g., `time`, `errors`). I/O systems like `database/sql`, `net/http` are prohibited in principle.
-- **UseCase →** Domain only (Minimal control-related standard library allowed).
-- **Infra Adapter →** Domain + external drivers/SDKs (Encapsulated).
-- **Framework →** UseCase (No direct touch of Infra concrete logic; instead via Composition Root).
+- Convert incoming requests into UseCase input.
+- Run authentication and authorization entry-point checks when they are delivery concerns.
+- Call UseCase entry points.
+- Convert UseCase output and errors into transport-specific responses.
+- Keep transport, routing, and rendering details out of Domain and UseCases.
 
-## 4. Error Boundary Rules
+#### Dependencies
 
-- **Infra Adapter does not return driver errors directly.**
-- **Domain/UseCase returns domain/usecase errors** (Carrying application meaning).
-- **Framework converts them to transport errors** (HTTP status, gRPC status, exit codes, etc.).
+- UseCases entry points and DTOs.
+- Presentation frameworks such as HTTP routers, gRPC runtimes, CLI libraries, or schedulers.
+- It should not call Infra Adapters directly for application workflow or persistence decisions.
 
-## 5. Data Boundary Rules
+## 4. Dependency Matrix (Permissible Dependencies)
 
-- **UseCase Input/Output are defined by explicit structures.**
-- **Entity is not mixed with Framework DTOs.**
-- **Responsibility for Mapping is fixed** (Unified in either Framework or UseCase).
+- **Domain ->** self-written domain code + minimal standard library only.
+- **UseCases ->** Domain + UseCase-owned boundary interfaces.
+- **Infra Adapters ->** Domain / UseCases interfaces and models + external drivers/SDKs as needed.
+- **Presentation ->** UseCases + presentation frameworks and transport DTOs.
+- **Composition Root ->** concrete Presentation, Infra Adapters, frameworks, drivers, configuration, and UseCases for wiring only.
 
-## 6. context.Context (Go) Handling
+### Conceptual Matrix
 
-- **Role**: Cross-cutting information like cancellations, timeouts, and tracing.
-- **Rule**: `context.Context` may be passed at the entrance of UseCase/Port, but Domain's Entity/ValueObject does not depend on `context` (Pass necessary data through arguments).
+| From / To        | Domain | UseCases | Infra Adapters | Presentation |
+| ---------------- | ------ | -------- | -------------- | ------------ |
+| Domain           | yes    | no       | no             | no           |
+| UseCases         | yes    | yes      | no             | no           |
+| Infra Adapters   | yes    | yes      | yes            | no           |
+| Presentation     | maybe  | yes      | no             | yes          |
+| Composition Root | yes    | yes      | yes            | yes          |
 
-## 7. DI / Composition Root
+`Presentation -> Domain` is `maybe` because response mapping may read domain values returned by UseCases. Presentation must not bypass UseCases to run domain workflow or persistence decisions.
 
-- Assembly of concrete instances is concentrated in **Main/Composition Root** (e.g., `cmd/<app>/main.go`).
-- Framework does not know about Port implementations (Infra Adapter); it calls them through the UseCase.
-- **Note on UseCase interfaces**: While dependencies must point inward, the Framework layer is not strictly required to access the UseCase via an interface. Direct reference to concrete UseCase classes/structs is acceptable if there is no immediate need for swapping implementations or mocking at the Framework level.
+## 5. Port Ownership Guidance
 
-## 8. Typical Directory Layout (Go)
+- Put a port in **Domain** when the abstraction is part of the domain language and would exist independently of this application.
+- Put a port in **UseCases** when the abstraction exists because an application workflow needs persistence, notification, authorization, payment, search, or another external capability.
+- Keep concrete implementations in **Infra Adapters** regardless of which inner layer owns the interface.
+- Treat exact port placement as a design decision; the Clean Architecture requirement is that concrete mechanisms do not point inward through concrete types.
+
+## 6. Error Boundary Rules
+
+- **Infra Adapters should not leak driver errors inward as policy.** Convert them to domain/usecase errors or adapter-level results with application meaning.
+- **Domain / UseCases errors carry business or application meaning**, not HTTP status codes, SQL sentinel errors, or SDK-specific exceptions.
+- **Presentation converts application errors to transport errors** such as HTTP status, gRPC status, CLI exit codes, or message acknowledgements.
+
+## 7. Data Boundary Rules
+
+- **UseCase Input/Output should be explicit** when it protects the inner policy from transport or persistence details.
+- **Domain objects are not Presentation DTOs or ORM records.** Avoid transport annotations, ORM tags, generated API types, and request-context fields in domain objects.
+- **Mapping responsibility should be consistent**. Presentation maps request/response data; Infra Adapters map persistence and external-service data; UseCases may map application DTOs when that keeps policy clear.
+
+## 8. context.Context (Go-Specific Handling)
+
+- **Role**: Propagate cancellation, deadlines, and tracing across I/O boundaries.
+- **Rule**: `context.Context` may be passed into UseCase entry points and Port methods when operations may block or perform I/O.
+- **Boundary**: Domain Entities and Value Objects should not store or depend on `context.Context`.
+- **Do not smuggle resources**: do not hide `sql.Tx`, DB handles, request objects, or SDK clients inside `context.Context` to cross architectural boundaries.
+
+## 9. DI / Composition Root
+
+- Concrete object assembly belongs in the application entry point / Composition Root (for example `cmd/<app>/main.go`).
+- Composition Root may import concrete Presentation, Infra Adapters, frameworks, drivers, configuration, and UseCases to assemble the graph.
+- Presentation handlers call UseCase entry points. They may depend on a UseCase interface or a concrete UseCase type; this is a testability and coupling trade-off, not a Clean Architecture requirement by itself.
+- Keep concrete Infra Adapter references out of Domain, UseCases, and ordinary Presentation flow. Presentation receives configured UseCases, not repositories or database clients.
+
+## 10. Typical Directory Layout (Go Example)
+
+This is only one common layout. Follow the existing project structure when it preserves the Dependency Rule and keeps the four responsibilities discoverable.
 
 ```text
-cmd/app/main.go                  // composition root
-internal/domain/...              // entity, domain service, ports, domain errors
-internal/usecase/...             // interactors + input/output DTO
-internal/infra/...               // db, external api, repo implementations
-internal/framework/http/...      // handlers, middleware, routing
+cmd/app/main.go                    // composition root
+internal/domain/...                // entities, value objects, domain services, domain errors
+internal/usecase/...               // interactors, input/output DTOs, usecase-owned ports
+internal/infra/persistence/...     // repository implementations, DB models, mapping
+internal/infra/external/...        // external API gateway implementations
+internal/presentation/http/...     // handlers/controllers/presenters
+internal/presentation/grpc/...     // gRPC handlers and transport mapping
+internal/presentation/cli/...      // CLI commands and output formatting
 ```
 
-## 9. Anti-Patterns (Immediate Disqualification)
+## 11. Anti-Patterns
 
-- Domain leaks types like DB / HTTP / ORM / SDK.
-- UseCase directly performs SQL / HTTP (Missing Port/Adapter separation).
-- Framework circumvents UseCase to directly manipulate Domain / Infra.
-- Infra Adapter holds business decisions (the core logic for conditional branching).
+- Domain leaks DB / HTTP / ORM / SDK / framework types.
+- UseCases directly perform SQL / HTTP / file I/O instead of depending on a boundary interface.
+- Presentation bypasses UseCases to run business workflow or persistence decisions directly.
+- Infra Adapter code owns business decisions that belong in Domain or UseCases.
+- Transport DTOs, ORM records, or generated API models are reused as Domain objects.
+- Presentation and Infra Adapters are merged in a way that makes request handling, response rendering, persistence, and external integration hard to find.
 
-## 10. Dependency Direction Diagram
+## 12. Dependency Direction Diagram
 
-The dependency arrows always point from outer layers toward inner layers:
+Original Clean Architecture circles:
 
 ```text
-    Framework ──→ UseCase ──→ Domain
-                              ↑
-         Infra Adapter ───────┘
+Frameworks & Drivers -> Interface Adapters -> Use Cases -> Entities
 ```
 
-Expanded view showing both paths:
+This skill's practical split:
 
 ```text
-    Framework ──→ UseCase ──→ Domain
-                    ↑            ↑
-         Infra Adapter ──────────┘
+Presentation  -> UseCases -> Domain
+Infra Adapters -> UseCases / Domain ports
+```
+
+Expanded view:
+
+```text
+Presentation  -----> UseCases -----> Domain
+                       ^              ^
+Infra Adapters --------+--------------+
+       implement ports owned by UseCases or Domain
 ```
 
 ### Key Points
 
-1. **UseCase → Domain**: Fixed dependency. UseCase always uses Domain's business rules.
-2. **Framework → UseCase**: Controllers/Handlers call UseCase. This is natural and expected. An interface is not strictly required here if the UseCase is not intended to be swapped or if mocking is not a priority for Framework-level testing.
-3. **Infra → UseCase (Dependency Inversion)**: Repository / Gateway implementations satisfy interfaces defined in Domain or UseCase. This is the core of the Dependency Inversion Principle.
-4. **Infra → Domain**: Acceptable and common. ORM persistence layers, DTO mapping, and Domain type references naturally create this dependency. This is NOT a violation.
+1. **UseCases -> Domain**: normal inward dependency on business rules.
+2. **Presentation -> UseCases**: delivery code calls application workflows and maps request/response data.
+3. **Infra Adapters -> UseCases / Domain ports**: infrastructure implements inner contracts; it must not depend on interactor workflow code except interface contracts it implements.
+4. **Concrete mechanisms**: web frameworks, DB drivers, SDKs, and runtimes are details used by Presentation, Infra Adapters, and Composition Root.
 
-### Dependency Matrix (Visual)
 
-| From ↓ To → | Domain | UseCase | Infra | Framework |
-|-------------|--------|---------|-------|-----------|
-| Domain      |   ✓    |    ✗    |   ✗   |     ✗     |
-| UseCase     |   ✓    |    ✓    |   ✗   |     ✗     |
-| Infra       |   ✓    |    ✓*   |   ✓   |     ✗     |
-| Framework   |   ✗    |    ✓    |   ✗   |     ✓     |
+### Implementation Order: Inner Policy First
 
-✓ = Allowed | ✗ = Prohibited | ✓* = Via interface (Dependency Inversion)
+When adding features, prefer working from policy to mechanism:
 
-### Implementation Order: Inner → Outer
+1. **Domain** — define business concepts and invariants when the feature has domain behavior.
+2. **UseCases** — define the application workflow, input/output boundary, and required ports.
+3. **Infra Adapters** — implement ports and map persistence/external data.
+4. **Presentation** — wire handlers, request parsing, response mapping, and transport errors.
+5. **Composition Root** — connect concrete frameworks, drivers, configuration, UseCases, and adapters.
 
-When adding features, implement from the innermost layer outward:
-
-1. **Domain** — Define Entity, business rules, Port interfaces, domain errors
-2. **UseCase** — Orchestrate Domain Ports, define Input/Output DTOs
-3. **Infra Adapter** — Implement Ports, handle DB/external API details
-4. **Framework** — Wire input parsing, call UseCase, format responses
