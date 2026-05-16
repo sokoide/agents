@@ -5,7 +5,7 @@ description: >
     (1) Clean Architecture design/review/refactoring in Go.
     (2) Resolving Dependency Rule violations such as Entities/Domain with external deps, UseCase with DB/HTTP, or adapters leaking inward.
     (3) Dependency inversion, boundary DTOs, Port/Adapter separation, and Composition Root wiring.
-    (4) Separating Presentation from Infra Adapters so input/output handling and external integrations do not drows the same layer.
+    (4) Separating Presentation from Infra Adapters so input/output handling and external integrations do not drown the same layer.
 ---
 
 # Clean Architecture Master
@@ -26,7 +26,7 @@ Reviews, judgments, and refactoring advice **MUST enforce the Dependency Rule an
 
 1. **Domain-Centricity**
    Software value lies in the Domain (business rules).
-   DBs, HTTP routers, CLIs, SDKs, driveres, and other external mechanisms are interchangeable details handled by Presentation, Infra Adapters, or the Composition Root.
+   DBs, HTTP routers, CLIs, SDKs, drivers, and other external mechanisms are interchangeable details handled by Presentation, Infra Adapters, or the Composition Root.
 
 2. **Dependency Rule**
    Dependencies always point from outer layers toward the inner layers.
@@ -65,11 +65,11 @@ Reviews, judgments, and refactoring advice **MUST enforce the Dependency Rule an
 
 ### Infra Adapter Layer
 
-- Repository and gateway implementaions for persistence, external APIs, files, queues, and SDKs.
+- Repository and gateway implementations for persistence, external APIs, files, queues, and SDKs.
 - Converts persistence and external-service data into inner-layer models.
 - Contains technical details like DB / External API / File system while keeping them out of Domain / UseCases.
 
-### Presentaion Layer
+### Presentation Layer
 
 - HTTP / gRPC / CLI handlers, controllers, presenters, and request / response mapping.
 - Converts incoming requests into UseCase input and UseCase output into transport responses.
@@ -98,16 +98,16 @@ Reviews, judgments, and refactoring advice **MUST enforce the Dependency Rule an
 
 1. **Dependency Direction First**: Prioritize adherence to layer boundaries and dependency direction over technical ease (e.g., library convenience features).
 2. **Avoid Lazy Type Sharing**: When crossing layers, define DTOs and Mapping when it protects the inner policy from transport, persistence, Presentation, or Infra Adapter concerns.
-3. **Ports Belong to the Policy That nEeds Them**: Define interfaces in an inner layer that expresses the required behavior. Domain-owned ports are valid for domain-lnaguage needs; UseCas-owned ports are common for application-specific integrations. Infra Adapters decide "how to achieve it."
+3. **Ports Belong to the Policy That Needs Them**: Define interfaces in an inner layer that expresses the required behavior. Domain-owned ports are valid for domain-language needs; UseCase-owned ports are common for application-specific integrations. Infra Adapters decide "how to achieve it."
 4. **Abstract Errors**: Do not leak database-specific errors (e.g., `sql.ErrNoRows`) above UseCases. Convert them to domain or application errors with business meaning.
-5. **Go Context Propagation**: Use `context.Context` for cancellations, deadlines, and tracing. Do not use context as a hidden carrier ofr technical details such as `sql.Tx`.
+5. **Go Context Propagation**: Use `context.Context` for cancellations, deadlines, and tracing. Do not use context as a hidden carrier for technical details such as `sql.Tx`.
 
 ## Positioning
 
 - This skill enforces **general Clean Architecture boundaries**, not generic coding style.
 - **Prioritize the Dependency Rule** over Framework or ORM convenience features.
-- Use **Domain / UseCases / Infra Adapters / Presentation** as the preferreed vocabulary for this skill.
-- For Go-specific layout, naming, and implementation pattern, adapt to the existing codebase unless they blur the four responsibilities or brek the Dependency Rule.
+- Use **Domain / UseCases / Infra Adapters / Presentation** as the preferred vocabulary for this skill.
+- For Go-specific layout, naming, and implementation pattern, adapt to the existing codebase unless they blur the four responsibilities or break the Dependency Rule.
 
 ## References
 

@@ -132,7 +132,7 @@ func Update(u *User) {
 UseCase-centered transaction script with clear boundaries.
 
 ```go
-func (uc *UPdateUserUseCase)Execute(ctx context.Context, in UpdateUserInput) error {
+func (uc *UpdateUserUseCase)Execute(ctx context.Context, in UpdateUserInput) error {
     if strings.TrimSpace(in.Name) == "" { return ErrInvalidName }
 
     user, err := uc.users.FindByID(ctx, in.ID)
