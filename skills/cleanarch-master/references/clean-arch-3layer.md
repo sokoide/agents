@@ -95,6 +95,12 @@ Enterprise-wide or domain-level business rules: the concepts that remain valuabl
 #### Definition
 
 Application-specific procedures that coordinate a user goal or system action. **Orchestration only.**
+UseCases SHOULD NOT:
+- contain SQL
+- depend on ORM models
+- manipulate transport details
+- perform rendering
+- contain core business invariants
 
 #### Responsibilities
 
@@ -179,22 +185,31 @@ Adapters that connect UseCases or Domain-owned ports to external systems.
 
 ### Conceptual Matrix
 
-| From / To                    | Domain | UseCases | Adapters |
-| ---------------------------- | ------ | -------- | -------- |
-| Domain                       | yes    | no       | no       |
-| UseCases                     | yes    | yes      | no       |
-| Adapters (Presentation)      | maybe  | yes      | self     |
-| Adapters (Infrastructure)    | yes    | yes      | self     |
-| Composition Root             | yes    | yes      | yes      |
+| From / To                    | Domain  | UseCases | Adapters |
+| ---------------------------- | ------  | -------- | -------- |
+| Domain                       | yes     | no       | no       |
+| UseCases                     | yes     | yes      | no       |
+| Adapters (Presentation)      | limited | yes      | self     |
+| Adapters (Infrastructure)    | yes     | yes      | self     |
+| Composition Root             | yes     | yes      | yes      |
 
-`Presentation → Domain` is `maybe` because response mapping may read domain values returned by UseCases for serialization only. Presentation must not invoke Domain methods to make workflow or business decisions, and must not bypass UseCases for persistence or application workflow.
-
+`Presentation → Domain` is `limited` because Presentation MAY read Domain values returned by UseCases for serialization, but MUST NOT invoke Domain behavior directly.
 `Adapters (Presentation)` and `Adapters (Infrastructure)` are in the same conceptual layer but must not depend on each other directly: Presentation must not call Infrastructure (bypasses UseCases), and Infrastructure must not call Presentation.
 
 ## 6. Port Ownership Guidance
 
 - Put a port in **Domain** when the abstraction is part of the domain language and would exist independently of this application.
+  - Prefer Domain-owned ports for:
+    - aggregate persistence
+    - entity lifecycle
+    - ubiquitous-language abstractions
 - Put a port in **UseCases** when the abstraction exists because an application workflow needs persistence, notification, authorization, payment, search, or another external capability.
+  - Prefer Usecase-owned ports for:
+    - workflow coordination
+    - policy queries
+    - external capabilities
+    - infrastructure services
+    - cross-system orchestration
 - Keep concrete implementations in **Adapters** regardless of which inner layer owns the interface.
 - Treat exact port placement as a design decision; the Clean Architecture requirement is that concrete mechanisms do not point inward through concrete types.
 
