@@ -1,8 +1,8 @@
 #!/bin/bash
 # Go Clean Architecture Dependency & Boundary Check
 #
-# Validates the 4-layer variant (Domain / UseCases / Infra Adapters / Presentation)
-# against the rules in references/clean-arch-4layer.md.
+# Validates the 3-layer variant (Domain / UseCases / Adapters)
+# against the rules in references/clean-arch-3layer.md.
 #
 # Checks performed:
 #   1. Dependency direction (import graph) between layers
@@ -47,11 +47,11 @@ warns=0
 
 layer_of() {
     local pkg="$1"
-    # Infra Adapters (check first — persistence/repository impl is infra)
-    if echo "$pkg" | grep -qE '(/infra/|/infrastructure/|/persistence/|/adapter/persistence|/adapter/external|/external/)'; then
+    # Infrastructure Adapters (check first — persistence/repository impl is infra)
+    if echo "$pkg" | grep -qE '(/adapters/infra/|/infra/|/infrastructure/|/persistence/|/adapter/persistence|/adapter/external|/external/)'; then
         echo "infra"
-    # Presentation
-    elif echo "$pkg" | grep -qE '(/presentation/|/transport/|/adapter/http|/adapter/grpc|/adapter/api|/handler/|/controller/)'; then
+    # Presentation Adapters
+    elif echo "$pkg" | grep -qE '(/adapters/presentation/|/presentation/|/transport/|/adapter/http|/adapter/grpc|/adapter/api|/handler/|/controller/)'; then
         echo "presentation"
     # UseCases
     elif echo "$pkg" | grep -qE '(/usecase/|/interactor/|/application/)'; then
@@ -108,13 +108,13 @@ while IFS=' ' read -r pkg imports_str; do
             presentation)
                 # Presentation must not depend directly on Infra (bypasses UseCases)
                 if [ "$imp_layer" = "infra" ]; then
-                    violation="Presentation '$pkg' imports Infra '$imp' (UseCase bypass)"
+                    violation="Presentation '$pkg' imports Infrastructure '$imp' (UseCase bypass)"
                 fi
                 ;;
             infra)
-                # Infra must not depend on Presentation
+                # Infrastructure must not depend on Presentation
                 if [ "$imp_layer" = "presentation" ]; then
-                    violation="Infra '$pkg' imports Presentation '$imp'"
+                    violation="Infrastructure '$pkg' imports Presentation '$imp'"
                 fi
                 ;;
         esac
@@ -220,7 +220,7 @@ for dir in $(find . -type d \( -path '*/domain/*' -o -path '*/entity/*' -o -path
     for gofile in "$dir"/*.go; do
         [ -f "$gofile" ] || continue
         if grep -qE '(\*sql\.Tx|\*sql\.DB|\*sql\.Conn|\*gorm\.DB|\*sqlx\.DB)' "$gofile" 2>/dev/null; then
-            echo "  [FAIL] $gofile references a DB handle type — transaction details must stay in Infra Adapters"
+            echo "  [FAIL] $gofile references a DB handle type — transaction details must stay in Adapters"
             errors=$((errors + 1))
         fi
     done

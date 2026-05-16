@@ -1,8 +1,8 @@
 # Common Pitfalls in Clean Architecture
 
-## 1. Domain Depending on Framework Details (Dependency Rule Violation)
+## 1. Domain Depending on Adapter Details (Dependency Rule Violation)
 
-The inner layer (Domain) must not know technical details from Presentation, Infra Adapters, frameworks, DBs, transports, or SDKs.
+The inner layer (Domain) must not know technical details from Adapters, frameworks, DBs, transports, or SDKs.
 
 **❌ Bad:**
 
@@ -86,7 +86,7 @@ type User struct {
     CreatedAt time.Time
 }
 
-// In infra/persistence/user_model.go
+// In adapters/infra/persistence/user_model.go
 type UserModel struct {
     ID        uint `gorm:"primaryKey"`
     // ... mapping needed
@@ -149,16 +149,16 @@ When a business rule changes (e.g., "only thread owner can post"):
 
 1. **Domain**: Add flag or method to Entity, define business rule and domain error.
 2. **UseCases**: Add 1-2 lines to apply the rule (e.g., `if !thread.CanPost() { return ErrNotThreadOwner }`).
-3. **Infra Adapters**: Update DB schema and mapping logic for the new data.
-4. **Presentation**: Update input DTO and add domain error → transport error mapping (e.g., 403).
+3. **Infrastructure Adapters**: Update DB schema and mapping logic for the new data.
+4. **Presentation Adapters**: Update input DTO and add domain error → transport error mapping (e.g., 403).
 
 **Anti-pattern**: Hardcoding business rules in HTTP handlers or SQL queries.
 
-## 6. Swapping Infrastructure — Infra Adapters + Composition Root Only
+## 6. Swapping Infrastructure — Infrastructure Adapters + Composition Root Only
 
 When changing DB (SQLite → PostgreSQL) or external service:
 
-1. **Infra Adapters**: Create a new struct implementing the existing Domain or UseCase Port interface.
+1. **Infrastructure Adapters**: Create a new struct implementing the existing Domain or UseCase Port interface.
 2. **Composition Root** (`main.go`): Swap the injected concrete implementation.
 3. **Domain / UseCases**: Zero changes needed — they depend on interfaces.
 
@@ -167,7 +167,7 @@ When changing DB (SQLite → PostgreSQL) or external service:
 When adding notification, logging, or other external integrations:
 
 1. **Domain or UseCases**: Define an interface (e.g., `NotificationGateway`). Prefer capability-oriented names over concrete service names (e.g. `NotificationGateway` rather than `SlackGateway`) so the inner contract does not depend on a replaceable vendor detail.
-2. **Infra Adapters**: Implement the concrete adapter (e.g., `SlackGateway` using webhooks).
+2. **Infrastructure Adapters**: Implement the concrete adapter (e.g., `SlackGateway` using webhooks).
 3. **UseCases**: Call the gateway after success logic. Call outside DB transaction to prevent rollback on notification failure.
 4. **Testing**: Mock the interface with a NoOp implementation — no real notifications needed.
 
@@ -195,7 +195,7 @@ func (r *CachingRepository) FindByID(id string) (domain.Entity, error) {
 
 UseCase code remains unchanged — the decorator is transparent.
 
-**Authentication**: Use Presentation-layer middleware.
+**Authentication**: Use Presentation Adapter middleware.
 
 - Verify JWT / API key in middleware.
 - Extract user ID and pass it via UseCase Input DTO.
@@ -205,9 +205,9 @@ UseCase code remains unchanged — the decorator is transparent.
 
 When switching REST → gRPC (or adding a new protocol):
 
-1. **Presentation**: Create new gRPC handler alongside the existing REST handler.
+1. **Presentation Adapters**: Create new gRPC handler alongside the existing REST handler.
 2. Both call the same UseCase.
-3. **Domain / UseCases / Infra Adapters**: Zero changes.
+3. **Domain / UseCases / Infrastructure Adapters**: Zero changes.
 
 ## 10. Testing Boundaries
 
@@ -245,6 +245,6 @@ func TestCreateUser(t *testing.T) {
 }
 ```
 
-**Infra Adapter integration tests**: Use a real database or test container. Verify mapping, queries, and error conversion.
+**Infrastructure Adapter integration tests**: Use a real database or test container. Verify mapping, queries, and error conversion.
 
-**Presentation tests**: Mock UseCase entry points. Verify request parsing, response mapping, and transport error conversion.
+**Presentation Adapter tests**: Mock UseCase entry points. Verify request parsing, response mapping, and transport error conversion.
