@@ -167,6 +167,7 @@ echo ""
 echo "--- 3. ORM / Transport Annotations in Domain ---"
 
 ORM_TAG_PATTERNS=(
+    'json:"'
     'gorm:"'
     'db:"'
     'protobuf:"'

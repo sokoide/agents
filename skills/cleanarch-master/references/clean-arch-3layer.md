@@ -5,6 +5,7 @@ This document defines a practical 3-layer Clean Architecture variant for Go: **A
 The Adapters layer is conceptually one layer but split into **Presentation Adapters** (inbound/driving) and **Infrastructure Adapters** (outbound/driven). This split prevents the adapter layer from becoming monolithic and clarifies the side-effect boundary.
 
 This variant borrows from:
+
 - **Bob Martin's Clean Architecture** for the dependency rule.
 - **Hexagonal Architecture (Ports & Adapters)** for the driving/driven adapter distinction.
 - **Pragmatic Go backend** for directory structure.
@@ -40,19 +41,19 @@ Presentation Adapters ---→ UseCases ---→ Domain
 
 ## 2. Mapping to Original Architectures
 
-| Original Clean Architecture | This Variant's Placement                                                       |
-| --------------------------- | ------------------------------------------------------------------------------ |
-| Entities                    | Domain                                                                         |
-| Use Cases                   | UseCases                                                                       |
-| Interface Adapters          | Adapters (Presentation + Infrastructure)                                       |
-| Frameworks & Drivers        | Concrete mechanisms used by Adapters and Composition Root                      |
+| Original Clean Architecture | This Variant's Placement                                  |
+| --------------------------- | --------------------------------------------------------- |
+| Entities                    | Domain                                                    |
+| Use Cases                   | UseCases                                                  |
+| Interface Adapters          | Adapters (Presentation + Infrastructure)                  |
+| Frameworks & Drivers        | Concrete mechanisms used by Adapters and Composition Root |
 
-| Hexagonal Architecture         | This Variant's Placement                                                       |
-| ------------------------------ | ------------------------------------------------------------------------------ |
-| Driving (Inbound) Adapters     | Presentation Adapters                                                          |
-| Application (Ports & Use Cases)| UseCases                                                                       |
-| Driven (Outbound) Adapters     | Infrastructure Adapters                                                        |
-| Domain                         | Domain                                                                         |
+| Hexagonal Architecture          | This Variant's Placement |
+| ------------------------------- | ------------------------ |
+| Driving (Inbound) Adapters      | Presentation Adapters    |
+| Application (Ports & Use Cases) | UseCases                 |
+| Driven (Outbound) Adapters      | Infrastructure Adapters  |
+| Domain                          | Domain                   |
 
 The names differ, but the main rule stays the same: source-code dependencies point inward toward higher-level policies.
 
@@ -96,6 +97,7 @@ Enterprise-wide or domain-level business rules: the concepts that remain valuabl
 
 Application-specific procedures that coordinate a user goal or system action. **Orchestration only.**
 UseCases SHOULD NOT:
+
 - contain SQL
 - depend on ORM models
 - manipulate transport details
@@ -185,31 +187,25 @@ Adapters that connect UseCases or Domain-owned ports to external systems.
 
 ### Conceptual Matrix
 
-| From / To                    | Domain  | UseCases | Adapters |
-| ---------------------------- | ------  | -------- | -------- |
-| Domain                       | yes     | no       | no       |
-| UseCases                     | yes     | yes      | no       |
-| Adapters (Presentation)      | limited | yes      | self     |
-| Adapters (Infrastructure)    | yes     | yes      | self     |
-| Composition Root             | yes     | yes      | yes      |
+| From / To                 | Domain  | UseCases | Adapters |
+| ------------------------- | ------- | -------- | -------- |
+| Domain                    | yes     | no       | no       |
+| UseCases                  | yes     | yes      | no       |
+| Adapters (Presentation)   | limited | yes      | self     |
+| Adapters (Infrastructure) | yes     | yes      | self     |
+| Composition Root          | yes     | yes      | yes      |
 
 `Presentation → Domain` is `limited` because Presentation MAY read Domain values returned by UseCases for serialization, but MUST NOT invoke Domain behavior directly.
 `Adapters (Presentation)` and `Adapters (Infrastructure)` are in the same conceptual layer but must not depend on each other directly: Presentation must not call Infrastructure (bypasses UseCases), and Infrastructure must not call Presentation.
 
 ## 6. Port Ownership Guidance
 
-- Put a port in **Domain** when the abstraction is part of the domain language and would exist independently of this application.
-  - Prefer Domain-owned ports for:
-    - aggregate persistence
-    - entity lifecycle
-    - ubiquitous-language abstractions
-- Put a port in **UseCases** when the abstraction exists because an application workflow needs persistence, notification, authorization, payment, search, or another external capability.
-  - Prefer Usecase-owned ports for:
-    - workflow coordination
-    - policy queries
-    - external capabilities
-    - infrastructure services
-    - cross-system orchestration
+- **Domain Port**: When the abstraction is part of the "Domain Language" and is essential for the domain model to fulfill its core business rules.
+    - **Examples**: `UserRepository.FindByID` (essential for re-constituting entities), `StockRepository.GetAvailableQuantity` (required for domain-level inventory checks).
+    - **Heuristic**: "Would the domain model be incomplete or unable to enforce its invariants without this capability?"
+- **UseCase Port**: When the abstraction is a "Tool" required to complete an application-specific procedure or coordinate with external systems.
+    - **Examples**: `IdentityGateway.IsMember` (authorization check against an external provider), `NotificationPort.SendWelcomeEmail` (a side-effect of the registration workflow), `SearchIndexPort` (an infrastructure requirement for a feature).
+    - **Heuristic**: "Is this a requirement of the application workflow (procedure) rather than the core business logic itself?"
 - Keep concrete implementations in **Adapters** regardless of which inner layer owns the interface.
 - Treat exact port placement as a design decision; the Clean Architecture requirement is that concrete mechanisms do not point inward through concrete types.
 
