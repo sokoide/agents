@@ -96,7 +96,7 @@ type UserModel struct {
 ## 4. Fat UseCases (Anemic Domain)
 
 Putting _all_ non-trivial business rules in UseCases and treating Domain objects as data bags makes the Domain hard to protect and reuse.
-This is a warning sign for complex domains, not a universal ban on anemic models. CRUD-heavy applications and deliberate transaction-script designs can still be valid Clean Architecture if dependencies, policies, and data boundaries remain clear.
+This is a warning sign for complex domains, not a universal ban on anemic models. Applications dealing primarily with **entities without meaningful invariants** (lookup tables, display models, tags) can still use a transaction-script style and remain valid Clean Architecture if dependencies, policies, and data boundaries stay clear.
 
 **❌ Bad:**
 
@@ -128,7 +128,7 @@ func Update(u *User) {
 ```
 
 
-**✅ Also valid for CRUD-heavy systems:**
+**✅ Also valid for entities without meaningful invariants:**
 UseCase-centered transaction script with clear boundaries.
 
 ```go
@@ -176,24 +176,24 @@ When adding notification, logging, or other external integrations:
 **Caching**: Use the Decorator pattern.
 
 ```go
-// CachingRepository wraps the real repository
+// CachingRepository wraps the real repository (UseCase Port)
 type CachingRepository struct {
-    inner domain.Repository
-    cache map[string]domain.Entity
+    inner usecase.UserRepository
+    cache map[string]*domain.User
 }
 
-func (r *CachingRepository) FindByID(id string) (domain.Entity, error) {
+func (r *CachingRepository) FindByID(ctx context.Context, id string) (*domain.User, error) {
     if v, ok := r.cache[id]; ok {
         return v, nil
     }
-    v, err := r.inner.FindByID(id)
+    v, err := r.inner.FindByID(ctx, id)
     if err != nil { return nil, err }
     r.cache[id] = v
     return v, nil
 }
 ```
 
-UseCase code remains unchanged — the decorator is transparent.
+The decorator implements `usecase.UserRepository` (a UseCase-owned port), keeping UseCase code unchanged.
 
 **Authentication**: Use Presentation Adapter middleware.
 
@@ -213,7 +213,7 @@ When switching REST → gRPC (or adding a new protocol):
 
 Clean Architecture enables targeted testing at each layer:
 
-**Domain unit tests**: Test entities and domain services with no mocks needed. Domain depends on nothing external.
+**Domain unit tests**: Test entities, value objects, and pure domain logic with no mocks. Domain Services that depend on Domain Ports require port stubs.
 
 ```go
 func TestUserActivate(t *testing.T) {
@@ -248,3 +248,60 @@ func TestCreateUser(t *testing.T) {
 **Infrastructure Adapter integration tests**: Use a real database or test container. Verify mapping, queries, and error conversion.
 
 **Presentation Adapter tests**: Mock UseCase entry points. Verify request parsing, response mapping, and transport error conversion.
+
+## 11. Transaction Boundary
+
+UseCases must control transaction boundaries without referencing database-specific types.
+
+**❌ Bad — DB type in UseCase signature:**
+
+```go
+func (uc *OrderUseCase) Create(tx *sql.Tx, order OrderInput) error {
+    // sql.Tx leaks infrastructure detail into UseCase
+}
+```
+
+**❌ Bad — Hidden dependency via context:**
+
+```go
+func (uc *OrderUseCase) Create(ctx context.Context, order OrderInput) error {
+    tx := ctx.Value("tx").(*sql.Tx) // UseCase reads tx from context
+}
+```
+
+**✅ Good — TxRunner Port:**
+
+```go
+// In usecase/ports/tx_runner.go
+type TxRunner interface {
+    WithinTransaction(ctx context.Context, fn func(ctx context.Context) error) error
+}
+
+// In UseCase
+func (uc *OrderUseCase) Create(ctx context.Context, order OrderInput) error {
+    return uc.txRunner.WithinTransaction(ctx, func(ctx context.Context) error {
+        // Multiple port calls are now atomic
+        if err := uc.orders.Save(ctx, &order); err != nil {
+            return err
+        }
+        return uc.events.Publish(ctx, OrderCreatedEvent{OrderID: order.ID})
+    })
+}
+```
+
+**Single Port call**: If only one Port is called and atomicity across multiple operations is not required, the TxRunner can be skipped — the Infrastructure Adapter manages its own transaction scope internally.
+
+**Nested transactions**: When UseCases call other UseCases within a transaction, nested transaction semantics are defined by the TxRunner implementation (savepoint, join existing, panic, etc.). Document the chosen semantics.
+
+## 12. Boundary Simplification Checklist
+
+When evaluating pragmatic mode (direct Domain exposure, mapping omission), verify:
+
+- Does the DTO prevent external contract coupling?
+- Does the mapping reduce leakage of transport concerns?
+- Would direct domain exposure create versioning constraints?
+- Can the consumer be coordinated-deployed with the domain changes?
+- Does entity construction preserve invariants?
+- Is each port owned by the correct layer?
+
+When in doubt, keep the DTO. Omitting mapping is an exception that should be a deliberate, documented decision.

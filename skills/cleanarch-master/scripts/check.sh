@@ -4,6 +4,10 @@
 # Validates the 3-layer variant (Domain / UseCases / Adapters)
 # against the rules in references/clean-arch-3layer.md.
 #
+# NOTE: check.sh provides heuristic architectural warnings,
+# not formal correctness proofs. It uses directory naming
+# conventions and does not perform full AST analysis.
+#
 # Checks performed:
 #   1. Dependency direction (import graph) between layers
 #   2. Technical detail leaks (DB/HTTP/ORM/Framework) into Domain and UseCases
@@ -47,11 +51,14 @@ warns=0
 
 layer_of() {
     local pkg="$1"
-    # Infrastructure Adapters (check first — persistence/repository impl is infra)
-    if echo "$pkg" | grep -qE '(/adapters/infra/|/infra/|/infrastructure/|/persistence/|/adapter/persistence|/adapter/external|/external/)'; then
+    # Composition Root (check first — cmd/ is wiring only)
+    if echo "$pkg" | grep -qE '(/cmd/)'; then
+        echo "cmd"
+    # Infrastructure Adapters (check early — persistence/repository impl is infra)
+    elif echo "$pkg" | grep -qE '(/adapters/infra/|/infra/|/infrastructure/|/persistence/|/adapter/persistence|/adapter/external|/external/)'; then
         echo "infra"
-    # Presentation Adapters
-    elif echo "$pkg" | grep -qE '(/adapters/presentation/|/presentation/|/transport/|/adapter/http|/adapter/grpc|/adapter/api|/handler/|/controller/)'; then
+    # Presentation Adapters (explicit transport patterns only — /handler/ is too ambiguous)
+    elif echo "$pkg" | grep -qE '(/adapters/presentation/|/presentation/|/transport/|/adapter/http|/adapter/grpc|/adapter/api|/http/|/grpc/|/cli/|/rest/)'; then
         echo "presentation"
     # UseCases
     elif echo "$pkg" | grep -qE '(/usecase/|/interactor/|/application/)'; then
@@ -83,6 +90,9 @@ while IFS=' ' read -r pkg imports_str; do
 
     # Skip blank lines
     [ -z "$pkg" ] && continue
+
+    # Composition Root (cmd/) — wiring is expected, skip dependency direction check
+    [ "$layer" = "cmd" ] && continue
 
     for imp in $imports_str; do
         # Only check imports within the same module
@@ -167,7 +177,6 @@ echo ""
 echo "--- 3. ORM / Transport Annotations in Domain ---"
 
 ORM_TAG_PATTERNS=(
-    'json:"'
     'gorm:"'
     'db:"'
     'protobuf:"'

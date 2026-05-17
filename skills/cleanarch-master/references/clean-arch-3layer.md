@@ -10,6 +10,16 @@ This variant borrows from:
 - **Hexagonal Architecture (Ports & Adapters)** for the driving/driven adapter distinction.
 - **Pragmatic Go backend** for directory structure.
 
+## Goals
+
+This rule set optimizes for:
+
+1. Maintain strict dependency direction
+2. Minimize accidental external coupling
+3. Reduce unnecessary mapping boilerplate
+4. Optimize for medium-sized Go services with small teams
+5. Prefer explicit policy over dogmatic purity
+
 ## 1. Layer Overview
 
 ```text
@@ -91,18 +101,49 @@ Enterprise-wide or domain-level business rules: the concepts that remain valuabl
 - Self-written domain code and minimal standard library needed to represent the domain.
 - No technical dependencies such as `database/sql`, `net/http`, ORM tags, web contexts, SDK clients, or generated transport types.
 
+#### Entity Export Policy
+
+- Entities with meaningful invariants SHOULD use unexported fields, exposing state through constructors and accessor methods.
+- Anemic / read-only models MAY use exported fields.
+
+```go
+// Entity with invariants: unexported fields
+type User struct {
+    id     UserID
+    name   string
+    status Status
+}
+
+func NewUser(id UserID, name string) (*User, error) {
+    if name == "" {
+        return nil, ErrInvalidName
+    }
+    return &User{id: id, name: name, status: StatusActive}, nil
+}
+
+func (u *User) Activate() error {
+    if u.name == "" {
+        return ErrInvalidName
+    }
+    u.status = StatusActive
+    return nil
+}
+```
+
 ### UseCases
 
 #### Definition
 
 Application-specific procedures that coordinate a user goal or system action. **Orchestration only.**
-UseCases SHOULD NOT:
+UseCases MUST NOT:
 
 - contain SQL
 - depend on ORM models
 - manipulate transport details
 - perform rendering
 - contain core business invariants
+- bypass domain invariants when constructing or mutating entities (e.g., bare struct literals for entities with invariants)
+- reference DB-specific types (`sql.Tx`, GORM, etc.)
 
 #### Responsibilities
 
@@ -116,6 +157,44 @@ UseCases SHOULD NOT:
 - Domain.
 - Boundary interfaces owned by the UseCases layer.
 - No direct dependency on concrete Adapters, web frameworks, database drivers, SDK clients, or serializers.
+
+#### Transaction Management
+
+UseCases control transaction boundaries but MUST NOT reference database-specific types.
+
+**Recommended: TxRunner Port pattern**
+
+```go
+// In usecase/ports/tx_runner.go
+type TxRunner interface {
+    WithinTransaction(ctx context.Context, fn func(ctx context.Context) error) error
+}
+```
+
+- **Owner**: UseCase Port
+- **Implementor**: Infrastructure Adapter
+
+**Tx Propagation Rules**:
+
+- Infrastructure Adapters MAY propagate transaction handles via `context.Context` internally (e.g., to repository implementations).
+- UseCases and Domain MUST NOT read transaction values from context directly (hidden dependency prevention).
+
+**Nested Transaction Semantics**:
+
+- Nested transaction semantics are implementation-defined by the TxRunner implementation (savepoint, join existing, panic, etc.).
+- When UseCases call other UseCases within a transaction, the TxRunner implementation semantics MUST be documented.
+
+**When transactions are unnecessary**: Single Port calls that do not require atomicity across multiple operations may skip the TxRunner entirely and let the Infrastructure Adapter manage its own transaction scope.
+
+#### Recommended Package Layout
+
+```text
+internal/usecase/
+  user_create.go          // interactor
+  user_update.go
+  ports/                  // UseCase-owned port interfaces (persistence, external tools)
+  dto/                    // input/output DTOs
+```
 
 ### Adapters
 
@@ -152,6 +231,25 @@ Adapters that deliver application behavior to users or external callers.
 - Presentation frameworks such as HTTP routers, gRPC runtimes, CLI libraries, or schedulers.
 - Must not call Infrastructure Adapters directly for application workflow or persistence decisions.
 
+**Presentation → Domain Policy**:
+
+By default, Presentation references UseCase Output DTOs only — not Domain types directly. This is the **Strict mode**.
+
+A presentation boundary MAY use **Pragmatic mode** (direct Domain read access) when ALL of the following conditions are met:
+
+1. Domain types contain no transport/persistence tags or annotations.
+2. Domain types contain no transport-specific nullable/optional fields.
+3. Field changes to Domain types can be **coordinated-deployed** with consumer contract changes (i.e., the consumer is not independently versioned).
+4. Access is read-only (state mutations go through UseCases).
+5. Consumer supports coordinated deployment / coordinated evolution.
+
+The policy applies at the **presentation boundary / package level** — mixing strict and pragmatic within the same boundary/package is prohibited.
+
+```text
+adapters/presentation/public/api/   → strict (DTO mapping required)
+adapters/presentation/internal/rpc/ → pragmatic (direct domain read allowed)
+```
+
 #### Infrastructure Adapters (Outbound / Driven)
 
 Adapters that connect UseCases or Domain-owned ports to external systems.
@@ -181,33 +279,40 @@ Adapters that connect UseCases or Domain-owned ports to external systems.
 
 - **Domain →** self-written domain code + minimal standard library only.
 - **UseCases →** Domain + UseCase-owned boundary interfaces.
-- **Adapters (Presentation) →** UseCases + presentation frameworks and transport DTOs.
+- **Adapters (Presentation) →** UseCases + presentation frameworks and transport DTOs. Domain access is conditional (see §4 Presentation → Domain Policy).
 - **Adapters (Infrastructure) →** Domain / UseCases interfaces and models + external drivers/SDKs.
 - **Composition Root →** concrete Adapters, frameworks, drivers, configuration, and UseCases for wiring only.
 
 ### Conceptual Matrix
 
-| From / To                 | Domain  | UseCases | Adapters |
-| ------------------------- | ------- | -------- | -------- |
-| Domain                    | yes     | no       | no       |
-| UseCases                  | yes     | yes      | no       |
-| Adapters (Presentation)   | limited | yes      | self     |
-| Adapters (Infrastructure) | yes     | yes      | self     |
-| Composition Root          | yes     | yes      | yes      |
+| From / To                 | Domain      | UseCases | Adapters |
+| ------------------------- | ----------- | -------- | -------- |
+| Domain                    | yes         | no       | no       |
+| UseCases                  | yes         | yes      | no       |
+| Adapters (Presentation)   | conditional | yes      | self     |
+| Adapters (Infrastructure) | yes         | yes      | self     |
+| Composition Root          | yes         | yes      | yes      |
 
-`Presentation → Domain` is `limited` because Presentation MAY read Domain values returned by UseCases for serialization, but MUST NOT invoke Domain behavior directly.
+`Presentation → Domain` is `conditional`: allowed only in Pragmatic mode per the policy defined in §4. The policy is set per presentation boundary/package, not per endpoint.
+
 `Adapters (Presentation)` and `Adapters (Infrastructure)` are in the same conceptual layer but must not depend on each other directly: Presentation must not call Infrastructure (bypasses UseCases), and Infrastructure must not call Presentation.
 
 ## 6. Port Ownership Guidance
 
-- **Domain Port**: When the abstraction is part of the "Domain Language" and is essential for the domain model to fulfill its core business rules.
-    - **Examples**: `UserRepository.FindByID` (essential for re-constituting entities), `StockRepository.GetAvailableQuantity` (required for domain-level inventory checks).
-    - **Heuristic**: "Would the domain model be incomplete or unable to enforce its invariants without this capability?"
-- **UseCase Port**: When the abstraction is a "Tool" required to complete an application-specific procedure or coordinate with external systems.
-    - **Examples**: `IdentityGateway.IsMember` (authorization check against an external provider), `NotificationPort.SendWelcomeEmail` (a side-effect of the registration workflow), `SearchIndexPort` (an infrastructure requirement for a feature).
-    - **Heuristic**: "Is this a requirement of the application workflow (procedure) rather than the core business logic itself?"
+Default: **UseCase owns the port.** Domain Port is the exception, reserved for domain-language capabilities.
+
+| Kind              | Owner    | Examples                                              |
+| ----------------- | -------- | ----------------------------------------------------- |
+| persistence       | UseCase  | UserRepository, OrderRepository                       |
+| external tool     | UseCase  | NotificationGateway, Mailer, Clock, UUIDGenerator     |
+| domain policy     | Domain   | PricingPolicy, FraudDetector, EligibilityChecker      |
+
+**Domain Port heuristic**: "Would the domain model be incomplete or unable to enforce its invariants without this capability?" If yes → Domain Port.
+
+**UseCase Port heuristic**: "Is this a requirement of the application workflow (procedure) rather than the core business logic itself?" If yes → UseCase Port.
+
 - Keep concrete implementations in **Adapters** regardless of which inner layer owns the interface.
-- Treat exact port placement as a design decision; the Clean Architecture requirement is that concrete mechanisms do not point inward through concrete types.
+- The Clean Architecture requirement is that concrete mechanisms do not point inward through concrete types.
 
 ## 7. Error Boundary Rules
 
@@ -221,12 +326,27 @@ Adapters that connect UseCases or Domain-owned ports to external systems.
 - **Domain objects are not Presentation DTOs or ORM records.** Avoid transport annotations, ORM tags, generated API types, and request-context fields in domain objects.
 - **Mapping responsibility should be consistent**. Presentation maps request/response data; Infrastructure Adapters map persistence and external-service data; UseCases may map application DTOs when that keeps policy clear.
 
+### Mapping Omission (Pragmatic Exception)
+
+Strict DTO mapping is the default. Mapping may be omitted only when ALL of the following conditions are met:
+
+1. The type contains no external-technology tags or annotations.
+2. The type contains no transport/persistence nullable/optional representations.
+3. Field changes can be **coordinated-deployed** with consumer contract changes (the consumer is not independently versioned).
+4. Access is read-only.
+5. Consumer supports coordinated deployment / coordinated evolution.
+
+Conditions 3 and 5 are the most significant. Read-only alone is insufficient — the essential question is whether API contract and domain evolution are safely coupled.
+
+When in doubt, keep the DTO. Omitting mapping is an exception that should be a deliberate, documented decision.
+
 ## 9. context.Context (Go-Specific Handling)
 
 - **Role**: Propagate cancellation, deadlines, and tracing across I/O boundaries.
 - **Rule**: `context.Context` may be passed into UseCase entry points and Port methods when operations may block or perform I/O.
 - **Boundary**: Domain Entities and Value Objects should not store or depend on `context.Context`.
 - **Do not smuggle resources**: do not hide `sql.Tx`, DB handles, request objects, or SDK clients inside `context.Context` to cross architectural boundaries.
+- **Exception**: Infrastructure Adapters MAY use context to propagate transaction handles internally (see §4 Transaction Management), but UseCases and Domain MUST NOT read those values from context.
 
 ## 10. DI / Composition Root
 
@@ -254,6 +374,8 @@ internal/adapters/infra/external/...             // external API gateway impleme
 
 - Domain leaks DB / HTTP / ORM / SDK / framework types.
 - UseCases directly perform SQL / HTTP / file I/O instead of depending on a boundary interface.
+- UseCases reference DB-specific types (`sql.Tx`, `*gorm.DB`, etc.) instead of using a TxRunner port.
+- UseCases bypass domain invariants via bare struct literals (`domain.User{Name: req.Name}`) for entities with meaningful invariants.
 - Presentation bypasses UseCases to run business workflow or persistence decisions directly.
 - Infrastructure Adapter code owns business decisions that belong in Domain or UseCases.
 - Transport DTOs, ORM records, or generated API models are reused as Domain objects.

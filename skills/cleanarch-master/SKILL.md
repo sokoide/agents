@@ -17,6 +17,16 @@ The Adapters layer is conceptually one layer but split into **Presentation Adapt
 
 This variant is compatible with the original Clean Architecture, Hexagonal Architecture (Ports & Adapters), and pragmatic Go backend patterns.
 
+## Goals
+
+This rule set optimizes for:
+
+1. Maintain strict dependency direction
+2. Minimize accidental external coupling
+3. Reduce unnecessary mapping boilerplate
+4. Optimize for medium-sized Go services with small teams
+5. Prefer explicit policy over dogmatic purity
+
 ## Related Tools
 
 This skill uses: Bash (for go commands), Glob, Grep, Read, Edit, Write
@@ -40,6 +50,8 @@ Reviews, judgments, and refactoring advice **MUST enforce the Dependency Rule an
    - **Adapters** = side-effect boundary
      - **Presentation Adapters** (inbound): HTTP / gRPC / CLI handlers, presenters, request / response mapping
      - **Infrastructure Adapters** (outbound): DB / External API / Files / queues / SDK integrations
+   - **UseCases** = orchestration, transaction boundaries, port definitions, application DTOs
+   - **Domain** = entities, value objects, domain services, domain errors, domain-language ports
 
 ## Layer Structure
 
@@ -111,16 +123,31 @@ internal/adapters/infra/external/...             // external API gateway impleme
 
 - **Dependency Direction**: Check if Domain imports external packages, UseCases depend directly on concrete adapters/drivers, or Presentation bypasses UseCases for application workflows.
 - **Responsibility Boundaries**: Check if Entity contains I/O or Adapter concerns, UseCases own domain invariants that belong in Entities, or adapters contain business decisions.
-- **Port Design**: Check if Repository / Gateway interfaces are defined on the side that owns the policy or use case need, and if they leak technical details like SQL / HTTP.
+- **Port Design**: Check if Repository / Gateway interfaces are defined on the side that owns the policy or use case need, and if they leak technical details like SQL / HTTP. Verify port ownership follows the principle: persistence/external tool ports → UseCase; domain policy ports → Domain.
 - **Error Boundary**: Check if Infrastructure Adapter returns driver errors directly, if Domain / UseCases return domain or application errors, and if Presentation converts them into transport errors (HTTP status, etc.).
 - **Data Boundary**: Check if UseCase input / output are clearly defined, if Entity is mixed with transport or persistence DTOs, and if Mapping responsibility is consistent.
-- **Transaction Management**: Check if the UseCases layer controls transaction policy and if technical details like `sql.Tx` leak into Domain / UseCases.
+- **Transaction Management**: Check if the UseCases layer controls transaction policy via a TxRunner port, and if technical details like `sql.Tx` leak into Domain / UseCases.
 - **Configuration Injection**: Check if configuration values (Config struct) are injected into UseCase / Adapter, leaving the Domain unaware of them.
+- **Entity Construction**: Check if UseCases bypass domain invariants via bare struct literals for entities with meaningful invariants.
+- **Presentation → Domain Policy**: Check if a consistent policy (strict or pragmatic) is applied per presentation boundary/package, not mixed within the same boundary.
+
+## Boundary Simplification Checklist
+
+When evaluating pragmatic mode (direct Domain exposure, mapping omission), verify:
+
+- Does the DTO prevent external contract coupling?
+- Does the mapping reduce leakage of transport concerns?
+- Would direct domain exposure create versioning constraints?
+- Can the consumer be coordinated-deployed with the domain changes?
+- Does entity construction preserve invariants?
+- Is each port owned by the correct layer?
 
 ## Common Violations (Fast Smell List)
 
 - Domain leaks types like `database/sql`, `net/http`, or ORM/SDK.
 - UseCases handle SQL / HTTP / File I/O directly (adapters not separated).
+- UseCases reference `sql.Tx` / DB types directly instead of using a TxRunner port.
+- UseCases bypass domain invariants via bare struct literals for entities with meaningful invariants.
 - Presentation persists Domain objects or drives business workflow directly, bypassing UseCases.
 - Infrastructure Adapter contains domain decisions (business logic).
 - Driver errors (e.g., SQL errors) leak through boundaries to upper layers.
@@ -131,7 +158,7 @@ internal/adapters/infra/external/...             // external API gateway impleme
 2. **Avoid Lazy Type Sharing**: When crossing layers, define DTOs and Mapping when it protects the inner policy from transport, persistence, or adapter concerns.
 3. **Ports Belong to the Policy That Needs Them**: Define interfaces in an inner layer that expresses the required behavior. Domain-owned ports are valid for domain-language needs; UseCase-owned ports are common for application-specific integrations. Adapters decide "how to achieve it."
 4. **Abstract Errors**: Do not leak database-specific errors (e.g., `sql.ErrNoRows`) above UseCases. Convert them to domain or application errors with business meaning.
-5. **Go Context Propagation**: Use `context.Context` for cancellations, deadlines, and tracing. Do not use context as a hidden carrier for technical details such as `sql.Tx`.
+5. **Go Context Propagation**: Use `context.Context` for cancellations, deadlines, and tracing. Do not use context as a hidden carrier for technical details such as `sql.Tx` (exception: Infrastructure Adapters MAY propagate tx handles internally via context, but UseCases and Domain MUST NOT read them).
 
 ## Positioning
 
