@@ -127,7 +127,6 @@ func Update(u *User) {
 }
 ```
 
-
 **✅ Also valid for entities without meaningful invariants:**
 UseCase-centered transaction script with clear boundaries.
 
