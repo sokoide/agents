@@ -12,5 +12,19 @@
   // MD010/no-hard-tabs: コードブロック内でのタブ利用を許可（Goのコードなどで必要なため）
   "MD010": {
     "code_blocks": false
-  }
+  },
+  // MD025/single-title: 複数の最上位見出し(h1)を許可（文書内で複数h1を使う場合があるため）
+  "MD025": false,
+  // MD040/fenced-code-language: コードブロックの言語指定を必須としない（言語未指定のブロックを許容するため）
+  "MD040": false,
+  // MD060: 追加ルールを無効化
+  "MD060": false,
+  // MD045/no-alt-text: 画像の代替テキスト必須を無効化（装飾的画像などで不要な場合があるため）
+  "MD045": false,
+  // MD001/heading-increment: 見出しレベルの段階的な増分を必須としない（h2→h4など飛ぶ場合があるため）
+  "MD001": false,
+  // MD027/no-multiple-space-blockquote: ブロッククォート記号後の複数スペースを許可（字下げ表現で使用するため）
+  "MD027": false,
+  // MD028/no-blanks-blockquote: ブロッククォート内の空行を許可（段落分けで使用するため）
+  "MD028": false
 }
